@@ -1,0 +1,155 @@
+// Configuration de la base de données et du client Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Configuration de la connexion MySQL
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum pour les rôles utilisateur
+enum Role {
+  ADMIN      // Administrateur système
+  UNIVERSITY // Université
+  STUDENT    // Étudiant
+}
+
+// Enum pour le statut du certificat
+enum CertificateStatus {
+  ACTIVE  // Certificat actif
+  REVOKED // Certificat révoqué
+}
+
+// Modèle Université
+// Représente une institution universitaire
+model University {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(255)
+  address      String   @db.Text
+  contactEmail String   @map("contact_email") @db.VarChar(255)
+  phone        String   @db.VarChar(50)
+  logoUrl      String?  @map("logo_url") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  students     Student[]
+  certificates Certificate[]
+  users        User[]
+  
+  @@map("universities")
+  @@index([contactEmail])
+}
+
+// Modèle Étudiant
+// Représente un étudiant inscrit dans une université
+model Student {
+  id            String   @id @default(uuid())
+  universityId  String   @map("university_id")
+  matricule     String   @unique @db.VarChar(50)
+  email         String   @db.VarChar(255)
+  photoUrl      String?  @map("photo_url") @db.VarChar(500)
+  dateOfBirth   DateTime @map("date_of_birth")
+  createdAt     DateTime @default(now()) @map("created_at")
+  major         String   @db.VarChar(255)
+  
+  // Relations
+  university    University     @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  certificates  Certificate[]
+  user          User?
+  studentRecord StudentRecord?
+  
+  @@map("students")
+  @@index([universityId])
+  @@index([matricule])
+  @@index([email])
+}
+
+// Modèle Utilisateur
+// Représente un compte utilisateur (admin, université, ou étudiant)
+model User {
+  id          String   @id @default(uuid())
+  universityId String? @map("university_id")
+  studentId   String?  @map("student_id") @unique
+  email       String   @unique @db.VarChar(255)
+  password    String   @db.VarChar(255)
+  role        Role     @default(STUDENT)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  university  University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  student     Student?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("users")
+  @@index([universityId])
+  @@index([email])
+  @@index([role])
+}
+
+// Modèle Certificat
+// Représente un diplôme/attestation délivré à un étudiant
+model Certificate {
+  id            String            @id @default(uuid())
+  studentId     String            @map("student_id")
+  universityId  String            @map("university_id")
+  degreeTitle   String            @map("degree_title") @db.VarChar(255)
+  specialization String           @map("specialization") @db.VarChar(255)
+  graduationDate DateTime         @map("graduation_date")
+  pdfUrl        String            @map("pdf_url") @db.VarChar(500)
+  qrCodeUrl     String            @map("qr_code_url") @db.VarChar(500)
+  qrHash        String            @unique @map("qr_hash") @db.VarChar(255)
+  status        CertificateStatus @default(ACTIVE)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  
+  // Relations
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  university    University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  verifications Verification[]
+  
+  @@map("certificates")
+  @@index([studentId])
+  @@index([universityId])
+  @@index([qrHash])
+  @@index([status])
+}
+
+// Modèle Vérification
+// Représente une vérification de certificat effectuée par une entreprise
+model Verification {
+  id              String    @id @default(uuid())
+  certificateId   String    @map("certificate_id")
+  companyName     String    @map("company_name") @db.VarChar(255)
+  email           String    @db.VarChar(255)
+  reason          String    @db.Text
+  verificationDate DateTime @default(now()) @map("verification_date")
+  ipAddress       String    @map("ip_address") @db.VarChar(45)
+  
+  // Relations
+  certificate     Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  
+  @@map("verifications")
+  @@index([certificateId])
+  @@index([verificationDate])
+}
+
+// Modèle Dossier Étudiant
+// Représente les informations complètes sur un étudiant (notes, assiduité, etc.)
+model StudentRecord {
+  id              String   @id @default(uuid())
+  studentId       String   @unique @map("student_id")
+  attendance      Int      @default(0) // Pourcentage d'assiduité
+  discipline      String   @db.Text    // Évaluation disciplinaire
+  gradesPdfUrl    String   @map("grades_pdf_url") @db.VarChar(500)
+  transcriptPdfUrl String  @map("transcript_pdf_url") @db.VarChar(500)
+  diplomaPdfUrl   String   @map("diploma_pdf_url") @db.VarChar(500)
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("student_records")
+  @@index([studentId])
+}
+
