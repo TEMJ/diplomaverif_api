@@ -1,191 +1,191 @@
-# 📖 Guide d'Utilisation - DiplomaVerif
+# 📖 Usage Guide - DiplomaVerif
 
-Ce guide explique comment utiliser DiplomaVerif pour gérer vos diplômes et certificats.
+This guide explains how to use DiplomaVerif to manage your diplomas and certificates.
 
-## 👤 Utilisateur: Admin
+## 👤 User: Admin
 
-### Responsabilités
-- Gestion globale du système
-- Création/suppression des universités
-- Supervision de tous les étudiants et certificats
+### Responsibilities
+- Global system management
+- Creation/deletion of universities
+- Supervision of all students and certificates
 
-### Actions Principales
+### Main Actions
 
-#### 1. Se Connecter
+#### 1. Login
 ```
 POST /api/auth/login
 Email: admin@diplomaverif.com
 Password: Password123!
 ```
 
-#### 2. Créer une Université
+#### 2. Create University
 ```bash
 POST /api/universities
 {
-  "name": "Université de Technologie",
-  "address": "123 Rue de la Science",
-  "contactEmail": "contact@ut.fr",
-  "phone": "+33 1 23 45 67 89"
+  "name": "Technology University",
+  "address": "123 Science Street",
+  "contactEmail": "contact@ut.com",
+  "phone": "+1 234 567 8900"
 }
 ```
-→ Un compte utilisateur est automatiquement créé pour cette université
+→ A user account is automatically created for this university
 
-#### 3. Lister les Certificats
+#### 3. List Certificates
 ```bash
 GET /api/certificates?page=1&limit=50
 ```
 
-#### 4. Supprimer une Ressource
+#### 4. Delete a Resource
 ```bash
 DELETE /api/universities/{id}
 DELETE /api/students/{id}
 DELETE /api/certificates/{id}
 ```
 
-## 🏫 Utilisateur: Université
+## 🏫 User: University
 
-### Responsabilités
-- Gérer ses étudiants
-- Délivrer des certificats
-- Uploader les dossiers étudiants
+### Responsibilities
+- Manage own students
+- Issue certificates
+- Upload student records
 
-### Actions Principales
+### Main Actions
 
-#### 1. Se Connecter
+#### 1. Login
 ```
 POST /api/auth/login
-Email: (email de contact de l'université)
-Password: (mot de passe temporaire reçu par email)
+Email: (university contact email)
+Password: (temporary password received by email)
 ```
 
-#### 2. Créer un Étudiant
+#### 2. Create Student
 ```bash
 POST /api/students
 {
-  "universityId": "votre-universite-id",
+  "universityId": "your-university-id",
   "matricule": "STUD2024001",
-  "email": "etudiant@mail.com",
+  "email": "student@mail.com",
   "dateOfBirth": "2000-05-15",
-  "major": "Informatique",
+  "major": "Computer Science",
   "photoUrl": "https://example.com/photo.jpg"
 }
 ```
-→ Un compte étudiant est automatiquement créé
+→ A student account is automatically created
 
-#### 3. Uploader le Dossier Étudiant
+#### 3. Upload Student Record
 ```bash
 POST /api/student-records
 {
   "studentId": "student-id",
   "attendance": 85,
-  "discipline": "Excellent comportement",
-  "gradesPdfUrl": "https://votre-domaine.com/grades-123.pdf",
-  "transcriptPdfUrl": "https://votre-domaine.com/transcript-123.pdf",
-  "diplomaPdfUrl": "https://votre-domaine.com/diploma-123.pdf"
+  "discipline": "Excellent behavior",
+  "gradesPdfUrl": "https://your-domain.com/grades-123.pdf",
+  "transcriptPdfUrl": "https://your-domain.com/transcript-123.pdf",
+  "diplomaPdfUrl": "https://your-domain.com/diploma-123.pdf"
 }
 ```
 
-#### 4. Délivrer un Certificat
+#### 4. Issue Certificate
 ```bash
 POST /api/certificates
 {
   "studentId": "student-id",
-  "universityId": "votre-universite-id",
-  "degreeTitle": "Master en Informatique",
-  "specialization": "Intelligence Artificielle",
+  "universityId": "your-university-id",
+  "degreeTitle": "Master in Computer Science",
+  "specialization": "Artificial Intelligence",
   "graduationDate": "2024-06-30",
-  "pdfUrl": "https://votre-domaine.com/diploma.pdf"
+  "pdfUrl": "https://your-domain.com/diploma.pdf"
 }
 ```
-→ Un QR code est automatiquement généré et attaché
+→ A QR code is automatically generated and attached
 
-#### 5. Révoquer un Certificat
+#### 5. Revoke Certificate
 ```bash
 PATCH /api/certificates/{id}/revoke
 ```
-→ Le certificat devient non valide pour les vérifications
+→ The certificate becomes invalid for verifications
 
-#### 6. Lister ses Étudiants
+#### 6. List Your Students
 ```bash
-GET /api/students?universityId=votre-id
+GET /api/students?universityId=your-id
 ```
 
-#### 7. Filtrer par Major
+#### 7. Filter by Major
 ```bash
-GET /api/students?major=Informatique
+GET /api/students?major=Computer Science
 ```
 
-## 🎓 Utilisateur: Étudiant
+## 🎓 User: Student
 
-### Responsabilités
-- Consulter ses diplômes
-- Voir les vérifications de ses certificats
+### Responsibilities
+- View diplomas
+- See verifications of certificates
 
-### Actions Principales
+### Main Actions
 
-#### 1. Se Connecter
+#### 1. Login
 ```
 POST /api/auth/login
-Email: (email d'étudiant)
-Password: (mot de passe temporaire reçu par email)
+Email: (student email)
+Password: (temporary password received by email)
 ```
 
-#### 2. Voir son Profil
+#### 2. View Profile
 ```bash
 GET /api/auth/me
 ```
 
-#### 3. Lister ses Certificats
+#### 3. List Your Certificates
 ```bash
-GET /api/certificates?studentId=votre-id
+GET /api/certificates?studentId=your-id
 ```
 
-#### 4. Voir son Dossier
+#### 4. View Your Record
 ```bash
-GET /api/student-records/student/votre-id
+GET /api/student-records/student/your-id
 ```
 
-#### 5. Voir les Vérifications de ses Certificats
+#### 5. See Verifications of Your Certificates
 ```bash
 GET /api/verifications?certificateId=cert-id
 ```
 
-#### 6. Changer son Mot de Passe
+#### 6. Change Password
 ```bash
 POST /api/auth/change-password
 {
-  "currentPassword": "ancien",
-  "newPassword": "nouveau"
+  "currentPassword": "old",
+  "newPassword": "new"
 }
 ```
 
-## 🌐 Utilisateur: Public (Entreprises)
+## 🌐 User: Public (Companies)
 
-### Responsabilités
-- Vérifier l'authenticité d'un diplôme via QR code
+### Responsibilities
+- Verify authenticity of diploma via QR code
 
-### Actions Principales
+### Main Actions
 
-#### 1. Scanner le QR Code
-- Recevoir un QR code de l'étudiant
-- Scanner le code avec un lecteur QR
+#### 1. Scan QR Code
+- Receive QR code from student
+- Scan code with QR reader
 
-#### 2. Vérifier le Certificat
+#### 2. Verify Certificate
 ```bash
 GET /api/certificates/verify/{qrHash}
 ```
 
-**Réponse Possible:**
+**Possible Response:**
 
-✅ **Certificat Valide:**
+✅ **Valid Certificate:**
 ```json
 {
   "success": true,
-  "message": "Certificat valide",
+  "message": "Certificate valid",
   "data": {
     "certificate": {
-      "degreeTitle": "Master en Informatique",
-      "specialization": "IA",
+      "degreeTitle": "Master in Computer Science",
+      "specialization": "AI",
       "status": "ACTIVE",
       "student": { ... },
       "university": { ... }
@@ -198,11 +198,11 @@ GET /api/certificates/verify/{qrHash}
 }
 ```
 
-❌ **Certificat Révoqué:**
+❌ **Revoked Certificate:**
 ```json
 {
   "success": true,
-  "message": "Certificat révoqué",
+  "message": "Certificate revoked",
   "data": {
     "certificate": {
       "status": "REVOKED"
@@ -211,114 +211,114 @@ GET /api/certificates/verify/{qrHash}
 }
 ```
 
-❌ **Certificat Introuvable:**
+❌ **Certificate Not Found:**
 ```json
 {
   "success": false,
-  "message": "Certificat introuvable ou hash invalide"
+  "message": "Certificate not found or invalid hash"
 }
 ```
 
-#### 3. Enregistrer la Vérification (Optionnel)
+#### 3. Register Verification (Optional)
 ```bash
 POST /api/verifications
 Authorization: Bearer {token}
 {
   "certificateId": "cert-id",
-  "companyName": "Mon Entreprise",
-  "email": "hr@mon-entreprise.com",
-  "reason": "Vérification pré-emploi"
+  "companyName": "My Company",
+  "email": "hr@my-company.com",
+  "reason": "Pre-employment verification"
 }
 ```
-→ L'étudiant reçoit une notification par email
+→ Student receives email notification
 
-## 🔍 Workflows Complets
+## 🔍 Complete Workflows
 
-### Workflow: Délivrance d'un Diplôme
+### Workflow: Issuing a Diploma
 
-1. **Université**: Créer l'étudiant
-2. **Université**: Uploader le dossier étudiant (notes, transcript)
-3. **Université**: Délivrer le certificat → QR code généré
-4. **Étudiant**: Consulter son certificat et QR code
-5. **Entreprise**: Scanner le QR code et vérifier
+1. **University**: Create student
+2. **University**: Upload student record (grades, transcript)
+3. **University**: Issue certificate → QR code generated
+4. **Student**: View certificate and QR code
+5. **Company**: Scan QR code and verify
 
-### Workflow: Vérification d'un Diplôme
+### Workflow: Verifying a Diploma
 
-1. **Étudiant**: Présenter son QR code à l'employeur
-2. **Entreprise**: Scanner le QR code
-3. **Système**: Récupérer et afficher les informations du certificat
-4. **Entreprise**: Confirmer l'authenticité
-5. **Étudiant**: Reçoit une notification par email
+1. **Student**: Present QR code to employer
+2. **Company**: Scan QR code
+3. **System**: Retrieve and display certificate information
+4. **Company**: Confirm authenticity
+5. **Student**: Receives email notification
 
-### Workflow: Révoquer un Diplôme
+### Workflow: Revoke a Diploma
 
-1. **Université/Admin**: Détecter une fraude
-2. **Université/Admin**: Révoquer le certificat
-3. **Système**: Le certificat devient non valide
-4. **Entreprises**: Vérifications futures indiquent "REVOKED"
+1. **University/Admin**: Detect fraud
+2. **University/Admin**: Revoke certificate
+3. **System**: Certificate becomes invalid
+4. **Companies**: Future verifications show "REVOKED"
 
-## 📊 Statistiques et Rapports
+## 📊 Statistics and Reports
 
-### Pour une Université
+### For a University
 
 ```bash
-# Nombre d'étudiants par major
-GET /api/students?universityId={id}&major=Informatique
+# Number of students per major
+GET /api/students?universityId={id}&major=Computer Science
 
-# Certificats délivrés
+# Certificates issued
 GET /api/certificates?universityId={id}
 
-# Taux de vérifications
+# Verification rate
 GET /api/verifications?certificateId={id}
 ```
 
-### Pour un Étudiant
+### For a Student
 
 ```bash
-# Mes certificats
+# My certificates
 GET /api/certificates?studentId={id}
 
-# Mon dossier
+# My record
 GET /api/student-records/student/{id}
 
-# Vérifications de mes diplômes
+# Verifications of my diplomas
 GET /api/verifications?certificateId={id}
 ```
 
-## 🔐 Bonnes Pratiques
+## 🔐 Best Practices
 
-### Sécurité
-- ✅ Changez votre mot de passe après la première connexion
-- ✅ Utilisez un mot de passe fort (min 8 caractères)
-- ✅ Ne partagez jamais votre QR code publiquement
-- ✅ Vérifiez l'URL lors des vérifications
+### Security
+- ✅ Change password after first login
+- ✅ Use strong password (min 8 characters)
+- ✅ Never share your QR code publicly
+- ✅ Verify the URL during verifications
 
-### Gestion
-- ✅ Vérifiez régulièrement la validité des certificats
-- ✅ Révoquez immédiatement en cas de fraude
-- ✅ Conservez les preuves de toute activité suspecte
-- ✅ Sauvegardez régulièrement vos données
+### Management
+- ✅ Regularly check certificate validity
+- ✅ Revoke immediately in case of fraud
+- ✅ Keep evidence of any suspicious activity
+- ✅ Back up your data regularly
 
 ### Communication
-- ✅ Notifiez les étudiants de toute révocation
-- ✅ Informez des changements de contact
-- ✅ Partagez les statistiques anonymes
+- ✅ Notify students of any revocation
+- ✅ Inform about contact changes
+- ✅ Share anonymous statistics
 
 ## 🆘 Support
 
-En cas de problème:
-1. Consultez le [README.md](README.md)
-2. Vérifiez la documentation API ([API.md](API.md))
-3. Contactez l'administrateur système
-4. Consultez les logs du serveur
+In case of problems:
+1. Consult [README.md](README.md)
+2. Check API documentation ([API.md](API.md))
+3. Contact system administrator
+4. Check server logs
 
-## 📚 Ressources Additionnelles
+## 📚 Additional Resources
 
-- [Guide d'Installation](SETUP.md)
-- [Référence API](API.md)
-- [Documentation Complète](README.md)
+- [Installation Guide](SETUP.md)
+- [API Reference](API.md)
+- [Complete Documentation](README.md)
 
 ---
 
-**Besoin d'aide?** Contactez support@diplomaverif.com
+**Need help?** Contact support@diplomaverif.com
 

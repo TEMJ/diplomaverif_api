@@ -2,18 +2,18 @@ import { PrismaClient, CertificateStatus, Student, Certificate } from '@prisma/c
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
-// Initialisation du client Prisma
+// Initialize Prisma client
 const prisma = new PrismaClient();
 
 /**
- * Fonction principale de seed
- * Crée les données de test pour toutes les tables
+ * Main seed function
+ * Creates sample data (UK / English) for development/testing
  */
 async function main() {
-  console.log('🌱 Démarrage du seed de la base de données...');
+  console.log('🌱 Starting database seed (UK test data)...');
 
-  // Nettoyage de la base de données (attention en production!)
-  console.log('🧹 Nettoyage de la base de données...');
+  // Clean database (CAUTION: destructive)
+  console.log('🧹 Cleaning database...');
   await prisma.verification.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.user.deleteMany();
@@ -21,106 +21,106 @@ async function main() {
   await prisma.student.deleteMany();
   await prisma.university.deleteMany();
 
-  // Hash du mot de passe par défaut pour les utilisateurs
+  // Default password for seeded users
   const defaultPassword = await bcrypt.hash('Password123!', 10);
 
-  // 1. Création des universités
-  console.log('📚 Création des universités...');
+  // 1. Create UK universities
+  console.log('📚 Creating universities...');
   const universities = await Promise.all([
     prisma.university.create({
       data: {
-        name: 'Université de Paris',
-        address: '17 Rue de la Sorbonne, 75005 Paris, France',
-        contactEmail: 'contact@univ-paris.fr',
-        phone: '+33 1 40 46 22 11',
-        logoUrl: 'https://example.com/logos/univ-paris.png',
+        name: 'University of Oxford',
+        address: 'University Offices, Wellington Square, Oxford OX1 2JD, United Kingdom',
+        contactEmail: 'admissions@ox.ac.uk',
+        phone: '+44 1865 270000',
+        logoUrl: 'https://example.com/logos/oxford.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université Aix-Marseille',
-        address: 'Aix-en-Provence Campus, 13397 Marseille, France',
-        contactEmail: 'contact@univ-amu.fr',
-        phone: '+33 4 13 55 30 00',
-        logoUrl: 'https://example.com/logos/univ-amu.png',
+        name: 'University of Cambridge',
+        address: 'The Old Schools, Trinity Ln, Cambridge CB2 1TN, United Kingdom',
+        contactEmail: 'admissions@cam.ac.uk',
+        phone: '+44 1223 337733',
+        logoUrl: 'https://example.com/logos/cambridge.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université Lyon 1',
-        address: '43 Boulevard du 11 Novembre 1918, 69622 Villeurbanne',
-        contactEmail: 'contact@univ-lyon1.fr',
-        phone: '+33 4 72 44 80 00',
-        logoUrl: 'https://example.com/logos/univ-lyon1.png',
+        name: 'Imperial College London',
+        address: 'Exhibition Rd, South Kensington, London SW7 2BX, United Kingdom',
+        contactEmail: 'contact@imperial.ac.uk',
+        phone: '+44 20 7589 5111',
+        logoUrl: 'https://example.com/logos/imperial.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université de Bordeaux',
-        address: '351 Cours de la Libération, 33405 Talence',
-        contactEmail: 'contact@u-bordeaux.fr',
-        phone: '+33 5 40 00 60 00',
-        logoUrl: 'https://example.com/logos/univ-bordeaux.png',
+        name: 'University College London',
+        address: 'Gower St, Bloomsbury, London WC1E 6BT, United Kingdom',
+        contactEmail: 'info@ucl.ac.uk',
+        phone: '+44 20 7679 2000',
+        logoUrl: 'https://example.com/logos/ucl.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université Toulouse 1 Capitole',
-        address: '2 Rue du Doyen Gabriel Marty, 31042 Toulouse',
-        contactEmail: 'contact@ut-capitole.fr',
-        phone: '+33 5 61 63 35 00',
-        logoUrl: 'https://example.com/logos/univ-toulouse.png',
+        name: 'University of Manchester',
+        address: 'Oxford Rd, Manchester M13 9PL, United Kingdom',
+        contactEmail: 'admissions@manchester.ac.uk',
+        phone: '+44 161 306 6000',
+        logoUrl: 'https://example.com/logos/manchester.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université de Lille',
-        address: '42 Rue Paul Duez, 59000 Lille',
-        contactEmail: 'contact@univ-lille.fr',
-        phone: '+33 3 20 41 60 00',
-        logoUrl: 'https://example.com/logos/univ-lille.png',
+        name: 'University of Edinburgh',
+        address: 'Old College, South Bridge, Edinburgh EH8 9YL, United Kingdom',
+        contactEmail: 'inquiries@ed.ac.uk',
+        phone: '+44 131 650 1000',
+        logoUrl: 'https://example.com/logos/edinburgh.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université de Strasbourg',
-        address: '4 Rue Blaise Pascal, 67081 Strasbourg',
-        contactEmail: 'contact@unistra.fr',
-        phone: '+33 3 68 85 00 00',
-        logoUrl: 'https://example.com/logos/univ-strasbourg.png',
+        name: "King's College London",
+        address: "Strand, London WC2R 2LS, United Kingdom",
+        contactEmail: 'info@kcl.ac.uk',
+        phone: '+44 20 7848 2000',
+        logoUrl: 'https://example.com/logos/kcl.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université de Montpellier',
-        address: '163 Rue Auguste Broussonnet, 34090 Montpellier',
-        contactEmail: 'contact@umontpellier.fr',
-        phone: '+33 4 67 14 20 20',
-        logoUrl: 'https://example.com/logos/univ-montpellier.png',
+        name: 'University of Birmingham',
+        address: 'Edgbaston, Birmingham B15 2TT, United Kingdom',
+        contactEmail: 'admissions@bham.ac.uk',
+        phone: '+44 121 414 3344',
+        logoUrl: 'https://example.com/logos/birmingham.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université Grenoble Alpes',
-        address: '621 Avenue Centrale, 38400 Saint-Martin-d\'Hères',
-        contactEmail: 'contact@univ-grenoble-alpes.fr',
-        phone: '+33 4 76 82 54 00',
-        logoUrl: 'https://example.com/logos/univ-grenoble.png',
+        name: 'University of Warwick',
+        address: 'Coventry CV4 7AL, United Kingdom',
+        contactEmail: 'info@warwick.ac.uk',
+        phone: '+44 24 7652 3523',
+        logoUrl: 'https://example.com/logos/warwick.png',
       },
     }),
     prisma.university.create({
       data: {
-        name: 'Université de Nantes',
-        address: '1 Quai de Tourville, 44000 Nantes',
-        contactEmail: 'contact@univ-nantes.fr',
-        phone: '+33 2 40 37 30 00',
-        logoUrl: 'https://example.com/logos/univ-nantes.png',
+        name: 'University of Glasgow',
+        address: 'University Avenue, Glasgow G12 8QQ, United Kingdom',
+        contactEmail: 'admissions@glasgow.ac.uk',
+        phone: '+44 141 330 2000',
+        logoUrl: 'https://example.com/logos/glasgow.png',
       },
     }),
   ]);
 
-  // 2. Création de l'utilisateur ADMIN
-  console.log('👤 Création de l\'administrateur...');
+  // 2. Create ADMIN user
+  console.log('👤 Creating administrator user...');
   const admin = await prisma.user.create({
     data: {
       email: 'admin@diplomaverif.com',
@@ -129,8 +129,8 @@ async function main() {
     },
   });
 
-  // 3. Création des utilisateurs universitaires
-  console.log('🏫 Création des utilisateurs universitaires...');
+  // 3. Create university users
+  console.log('🏫 Creating university users...');
   const universityUsers = await Promise.all(
     universities.map(uni =>
       prisma.user.create({
@@ -144,32 +144,35 @@ async function main() {
     )
   );
 
-  // 4. Création des étudiants
-  console.log('🎓 Création des étudiants...');
-  // Typer explicitement le tableau pour éviter l'erreur TypeScript
+  // 4. Create students
+  console.log('🎓 Creating students...');
   const students: (Student & { major: string })[] = [];
   const majors = [
-    'Informatique',
-    'Mathématiques',
-    'Physique',
-    'Chimie',
-    'Biologie',
-    'Économie',
-    'Droit',
-    'Médecine',
-    'Ingénierie',
-    'Langues',
+    'Computer Science',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'Economics',
+    'Law',
+    'Medicine',
+    'Engineering',
+    'Modern Languages',
   ];
 
-  // Créer 10 étudiants par université (100 au total)
+  const firstNames = ['Oliver','George','Harry','Jack','Noah','Charlie','William','Thomas','James','Henry','Olivia','Amelia','Isla','Ava','Emily','Sophia','Mia','Isabella','Lily','Freya'];
+  const lastNames = ['Smith','Jones','Taylor','Brown','Williams','Wilson','Davies','Evans','Thomas','Roberts','Johnson','Walker','Wright','Robinson','Thompson','White','Hughes','Edwards','Green','Hall'];
+
+  // Create 10 students per university (100 total)
   for (const university of universities) {
     for (let i = 1; i <= 10; i++) {
-      // Générer un matricule unique
       const matricule = `${university.name.substring(0, 3).toUpperCase()}${Date.now()}${Math.random().toString(36).substring(2, 8)}${i}`;
-      
-      // Générer un email unique
-      const email = `student${students.length + 1}@${university.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${university.id.substring(0, 8)}.edu`;
-      
+
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+
+      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${students.length + 1}@${university.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z]/g, '')}.ac.uk`;
+
       const major = majors[Math.floor(Math.random() * majors.length)];
       const dateOfBirth = new Date(1995 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
 
@@ -177,8 +180,10 @@ async function main() {
         data: {
           universityId: university.id,
           matricule,
+          firstName,
+          lastName,
           email,
-          photoUrl: `https://example.com/photos/student-${students.length + 1}.jpg`,
+          photoUrl: `https://example.com/photos/${firstName.toLowerCase()}-${lastName.toLowerCase()}-${students.length + 1}.jpg`,
           dateOfBirth,
           major,
         },
@@ -186,7 +191,7 @@ async function main() {
 
       students.push({ ...student, major });
 
-      // Créer l'utilisateur étudiant associé
+      // Create associated student user
       await prisma.user.create({
         data: {
           studentId: student.id,
@@ -198,18 +203,18 @@ async function main() {
     }
   }
 
-  console.log(`✅ ${students.length} étudiants créés`);
+  console.log(`✅ ${students.length} students created`);
 
-  // 5. Création des dossiers étudiants
-  console.log('📁 Création des dossiers étudiants...');
+  // 5. Create student records
+  console.log('📁 Creating student records...');
   for (const student of students) {
     const attendance = Math.floor(Math.random() * 40) + 60; // 60-100%
     const disciplineNotes = [
-      'Excellent comportement',
-      'Bon comportement',
-      'Quelques absences non justifiées',
-      'Comportement exemplaire',
-      'Étudiant sérieux et assidu',
+      'Excellent conduct',
+      'Good conduct',
+      'Some unexcused absences',
+      'Exemplary behaviour',
+      'Diligent and committed student',
     ];
     const discipline = disciplineNotes[Math.floor(Math.random() * disciplineNotes.length)];
 
@@ -225,33 +230,32 @@ async function main() {
     });
   }
 
-  // 6. Création des certificats
-  console.log('📜 Création des certificats...');
-  // Typer explicitement le tableau pour éviter l'erreur TypeScript
+  // 6. Create certificates
+  console.log('📜 Creating certificates...');
   const certificates: Certificate[] = [];
   const degreeTitles = [
-    'Licence en Informatique',
-    'Master en Mathématiques',
-    'Licence en Physique',
-    'Master en Chimie',
-    'Licence en Biologie',
-    'Master en Économie',
-    'Licence en Droit',
-    'Doctorat en Médecine',
-    'Master en Ingénierie',
-    'Licence en Langues',
+    'BSc in Computer Science',
+    'MSc in Mathematics',
+    'BSc in Physics',
+    'MSc in Chemistry',
+    'BSc in Biology',
+    'MSc in Economics',
+    'LLB in Law',
+    'PhD in Medicine',
+    'MEng in Engineering',
+    'BA in Modern Languages',
   ];
   const specializations = [
-    'Intelligence Artificielle',
-    'Analyse de Données',
-    'Nanotechnologies',
-    'Biochimie',
-    'Génétique',
-    'Finance Internationale',
-    'Droit International',
-    'Chirurgie',
-    'Génie Civil',
-    'Traduction',
+    'Artificial Intelligence',
+    'Data Analysis',
+    'Nanotechnology',
+    'Biochemistry',
+    'Genetics',
+    'International Finance',
+    'International Law',
+    'Surgical Research',
+    'Civil Engineering',
+    'Translation Studies',
   ];
 
   for (const student of students) {
@@ -261,10 +265,8 @@ async function main() {
     const degreeIndex = Math.floor(Math.random() * degreeTitles.length);
     const degreeTitle = degreeTitles[degreeIndex];
     const specialization = specializations[degreeIndex];
-    
-    // Générer un hash unique pour le QR code
+
     const qrHash = crypto.randomBytes(16).toString('hex');
-    
     const graduationDate = new Date(2020 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
 
     const certificate = await prisma.certificate.create({
@@ -277,46 +279,45 @@ async function main() {
         pdfUrl: `https://example.com/certificates/cert-${student.id}.pdf`,
         qrCodeUrl: `https://example.com/qrcodes/qr-${qrHash}.png`,
         qrHash,
-        status: Math.random() > 0.1 ? CertificateStatus.ACTIVE : CertificateStatus.REVOKED, // 90% actifs
+        status: Math.random() > 0.1 ? CertificateStatus.ACTIVE : CertificateStatus.REVOKED,
       },
     });
 
     certificates.push(certificate);
   }
 
-  console.log(`✅ ${certificates.length} certificats créés`);
+  console.log(`✅ ${certificates.length} certificates created`);
 
-  // 7. Création des vérifications
-  console.log('🔍 Création des vérifications...');
+  // 7. Create verifications
+  console.log('🔍 Creating verifications...');
   const companyNames = [
-    'TechCorp Solutions',
-    'InnovateHub Inc.',
-    'DataSmart Consulting',
-    'CloudForge Systems',
-    'CodeMasters Ltd.',
-    'Digital Dynamics',
-    'FutureTech Industries',
-    'SmartSoft Corporation',
-    'ByteLogic Solutions',
-    'Apex Innovations',
+    'BritTech Solutions',
+    'Cavendish Consulting',
+    'Oxford Data Services',
+    'LondonCloud Ltd',
+    'CodeWorks UK',
+    'Digital Harbour',
+    'FutureBridge Ltd',
+    'SmartLogic UK',
+    'ByteHouse',
+    'Apex UK',
   ];
 
   const reasons = [
-    'Vérification de diplôme pour recrutement',
-    'Conformité et audit',
-    'Vérification pré-emploi',
-    'Validation de compétences',
-    'Processus de recrutement',
+    'Degree verification for recruitment',
+    'Compliance and audit',
+    'Pre-employment verification',
+    'Skills validation',
+    'Recruitment screening',
   ];
 
-  // Créer des vérifications pour 50 certificats aléatoires
   for (let i = 0; i < 50; i++) {
     const certIndex = Math.floor(Math.random() * certificates.length);
     const certificate = certificates[certIndex];
     const companyName = companyNames[Math.floor(Math.random() * companyNames.length)];
-    const email = `hr@${companyName.toLowerCase().replace(/\s/g, '-')}.com`;
+    const email = `hr@${companyName.toLowerCase().replace(/\s/g, '-')}.co.uk`;
     const reason = reasons[Math.floor(Math.random() * reasons.length)];
-    const ipAddress = `192.168.1.${Math.floor(Math.random() * 255)}`;
+    const ipAddress = `81.12.34.${Math.floor(Math.random() * 255)}`; // sample UK-like IP octet
     const verificationDate = new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000);
 
     await prisma.verification.create({
@@ -331,26 +332,26 @@ async function main() {
     });
   }
 
-  console.log('✅ 50 vérifications créées');
+  console.log('✅ 50 verifications created');
 
-  // Résumé
-  console.log('\n📊 Résumé du seed:');
-  console.log(`  ✅ ${universities.length} universités`);
-  console.log(`  ✅ 1 administrateur (email: admin@diplomaverif.com)`);
-  console.log(`  ✅ ${universityUsers.length} utilisateurs universitaires`);
-  console.log(`  ✅ ${students.length} étudiants`);
-  console.log(`  ✅ ${students.length} utilisateurs étudiants`);
-  console.log(`  ✅ ${students.length} dossiers étudiants`);
-  console.log(`  ✅ ${certificates.length} certificats`);
-  console.log(`  ✅ 50 vérifications`);
-  console.log('\n🔑 Mot de passe par défaut pour tous les comptes: Password123!');
-  console.log('🎉 Seed terminé avec succès!\n');
+  // Summary
+  console.log('\n📊 Seed summary:');
+  console.log(`  ✅ ${universities.length} universities`);
+  console.log(`  ✅ 1 administrator (email: admin@diplomaverif.com)`);
+  console.log(`  ✅ ${universityUsers.length} university users`);
+  console.log(`  ✅ ${students.length} students`);
+  console.log(`  ✅ ${students.length} student users`);
+  console.log(`  ✅ ${students.length} student records`);
+  console.log(`  ✅ ${certificates.length} certificates`);
+  console.log(`  ✅ 50 verifications`);
+  console.log('\n🔑 Default password for all seeded accounts: Password123!');
+  console.log('🎉 Seed completed successfully!\n');
 }
 
-// Exécution du seed
+// Execute seed
 main()
   .catch((e) => {
-    console.error('❌ Erreur lors du seed:', e);
+    console.error('❌ Error during seed:', e);
     process.exit(1);
   })
   .finally(async () => {

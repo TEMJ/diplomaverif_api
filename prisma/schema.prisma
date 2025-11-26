@@ -1,29 +1,29 @@
-// Configuration de la base de données et du client Prisma
+// Database configuration and Prisma client
 generator client {
   provider = "prisma-client-js"
 }
 
-// Configuration de la connexion MySQL
+// MySQL connection configuration
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-// Enum pour les rôles utilisateur
+// Enum for user roles
 enum Role {
-  ADMIN      // Administrateur système
-  UNIVERSITY // Université
-  STUDENT    // Étudiant
+  ADMIN      // System administrator
+  UNIVERSITY // University
+  STUDENT    // Student
 }
 
-// Enum pour le statut du certificat
+// Enum for certificate status
 enum CertificateStatus {
-  ACTIVE  // Certificat actif
-  REVOKED // Certificat révoqué
+  ACTIVE  // Active certificate
+  REVOKED // Revoked certificate
 }
 
-// Modèle Université
-// Représente une institution universitaire
+// University Model
+// Represents a university institution
 model University {
   id           String   @id @default(uuid())
   name         String   @db.VarChar(255)
@@ -42,12 +42,14 @@ model University {
   @@index([contactEmail])
 }
 
-// Modèle Étudiant
-// Représente un étudiant inscrit dans une université
+// Student Model
+// Represents a student enrolled in a university
 model Student {
   id            String   @id @default(uuid())
   universityId  String   @map("university_id")
   matricule     String   @unique @db.VarChar(50)
+  firstName     String   @map("first_name") @db.VarChar(255)
+  lastName      String   @map("last_name") @db.VarChar(255)
   email         String   @db.VarChar(255)
   photoUrl      String?  @map("photo_url") @db.VarChar(500)
   dateOfBirth   DateTime @map("date_of_birth")
@@ -66,8 +68,8 @@ model Student {
   @@index([email])
 }
 
-// Modèle Utilisateur
-// Représente un compte utilisateur (admin, université, ou étudiant)
+// User Model
+// Represents a user account (admin, university, or student)
 model User {
   id          String   @id @default(uuid())
   universityId String? @map("university_id")
@@ -88,8 +90,8 @@ model User {
   @@index([role])
 }
 
-// Modèle Certificat
-// Représente un diplôme/attestation délivré à un étudiant
+// Certificate Model
+// Represents a diploma/attestation issued to a student
 model Certificate {
   id            String            @id @default(uuid())
   studentId     String            @map("student_id")
@@ -115,8 +117,8 @@ model Certificate {
   @@index([status])
 }
 
-// Modèle Vérification
-// Représente une vérification de certificat effectuée par une entreprise
+// Verification Model
+// Represents a certificate verification performed by a company
 model Verification {
   id              String    @id @default(uuid())
   certificateId   String    @map("certificate_id")
@@ -134,13 +136,13 @@ model Verification {
   @@index([verificationDate])
 }
 
-// Modèle Dossier Étudiant
-// Représente les informations complètes sur un étudiant (notes, assiduité, etc.)
+// StudentRecord Model
+// Represents complete information about a student (grades, attendance, etc.)
 model StudentRecord {
   id              String   @id @default(uuid())
   studentId       String   @unique @map("student_id")
-  attendance      Int      @default(0) // Pourcentage d'assiduité
-  discipline      String   @db.Text    // Évaluation disciplinaire
+  attendance      Int      @default(0) // Attendance percentage
+  discipline      String   @db.Text    // Disciplinary evaluation
   gradesPdfUrl    String   @map("grades_pdf_url") @db.VarChar(500)
   transcriptPdfUrl String  @map("transcript_pdf_url") @db.VarChar(500)
   diplomaPdfUrl   String   @map("diploma_pdf_url") @db.VarChar(500)

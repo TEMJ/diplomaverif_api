@@ -2,21 +2,21 @@ import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 
 /**
- * Service d'envoi d'emails
- * Utilise Nodemailer pour envoyer des emails transactionnels
+ * Email service
+ * Uses Nodemailer to send transactional emails
  */
 class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Configuration optimisée pour Gmail
+    // Optimized configuration for Gmail
     this.transporter = nodemailer.createTransport({
-      service: 'gmail', // Utilise la configuration prédéfinie Gmail
+      service: 'gmail', // Uses predefined Gmail configuration
       auth: {
         user: env.smtpUser,
         pass: env.smtpPassword,
       },
-      // Options supplémentaires pour la stabilité
+      // Additional options for stability
       tls: {
         rejectUnauthorized: false,
       },
@@ -24,25 +24,25 @@ class EmailService {
   }
 
   /**
-   * Vérifie la connexion au serveur SMTP
-   * @returns True si la connexion est valide
+   * Verifies SMTP server connection
+   * @returns True if connection is valid
    */
   async verifyConnection(): Promise<boolean> {
     try {
       await this.transporter.verify();
-      console.log('✅ Configuration SMTP valide');
+      console.log('✅ Valid SMTP configuration');
       return true;
     } catch (error) {
-      console.error('❌ Erreur de configuration SMTP:', error);
+      console.error('❌ SMTP configuration error:', error);
       return false;
     }
   }
 
   /**
-   * Envoie un email de bienvenue avec mot de passe temporaire
-   * @param to - Adresse email du destinataire
-   * @param temporaryPassword - Mot de passe temporaire
-   * @param role - Rôle de l'utilisateur (ADMIN, UNIVERSITY, STUDENT)
+   * Sends a welcome email with temporary password
+   * @param to - Recipient email address
+   * @param temporaryPassword - Temporary password
+   * @param role - User role (ADMIN, UNIVERSITY, STUDENT)
    */
   async sendWelcomeEmail(
     to: string,
@@ -50,15 +50,15 @@ class EmailService {
     role: string
   ): Promise<void> {
     const roleNames: { [key: string]: string } = {
-      ADMIN: 'Administrateur',
-      UNIVERSITY: 'Université',
-      STUDENT: 'Étudiant',
+      ADMIN: 'Administrator',
+      UNIVERSITY: 'University',
+      STUDENT: 'Student',
     };
 
     const mailOptions = {
       from: env.smtpFrom,
       to,
-      subject: 'Bienvenue sur DiplomaVerif - Vos identifiants',
+      subject: 'Welcome to DiplomaVerif - Your credentials',
       html: `
         <!DOCTYPE html>
         <html>
@@ -80,29 +80,29 @@ class EmailService {
             <div class="container">
               <div class="header">
                 <h1>🎓 DiplomaVerif</h1>
-                <p>Plateforme de Vérification de Diplômes</p>
+                <p>Diploma Verification Platform</p>
               </div>
               <div class="content">
-                <h2>Bienvenue!</h2>
-                <p>Votre compte ${roleNames[role]} a été créé avec succès sur la plateforme DiplomaVerif.</p>
+                <h2>Welcome!</h2>
+                <p>Your ${roleNames[role]} account has been successfully created on the DiplomaVerif platform.</p>
                 
                 <div class="credentials">
-                  <p><strong>Adresse email:</strong> ${to}</p>
-                  <p class="warning">⚠️ Mot de passe temporaire:</p>
+                  <p><strong>Email address:</strong> ${to}</p>
+                  <p class="warning">⚠️ Temporary password:</p>
                   <div class="password">${temporaryPassword}</div>
                 </div>
                 
-                <p class="warning">🔒 Pour votre sécurité, veuillez changer ce mot de passe lors de votre première connexion.</p>
+                <p class="warning">🔒 For your security, please change this password on your first login.</p>
                 
                 <div style="text-align: center;">
-                  <a href="${env.baseUrl}/login" class="button">Se connecter</a>
+                  <a href="${env.baseUrl}/login" class="button">Login</a>
                 </div>
                 
-                <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+                <p>If you have any questions, please don't hesitate to contact us.</p>
               </div>
               <div class="footer">
                 <p>DiplomaVerif © ${new Date().getFullYear()}</p>
-                <p>Cet email est automatique, merci de ne pas y répondre.</p>
+                <p>This email is automated, please do not reply to it.</p>
               </div>
             </div>
           </body>
@@ -114,11 +114,11 @@ class EmailService {
   }
 
   /**
-   * Envoie un email de notification de vérification de certificat
-   * @param to - Adresse email du destinataire
-   * @param studentName - Nom de l'étudiant
-   * @param companyName - Nom de l'entreprise vérificatrice
-   * @param date - Date de la vérification
+   * Sends a certificate verification notification email
+   * @param to - Recipient email address
+   * @param studentName - Student name
+   * @param companyName - Company name verifying
+   * @param date - Verification date
    */
   async sendVerificationNotification(
     to: string,
@@ -129,7 +129,7 @@ class EmailService {
     const mailOptions = {
       from: env.smtpFrom,
       to,
-      subject: 'Notification - Vérification de votre diplôme',
+      subject: 'Notification - Your diploma has been verified',
       html: `
         <!DOCTYPE html>
         <html>
@@ -147,25 +147,25 @@ class EmailService {
           <body>
             <div class="container">
               <div class="header">
-                <h1>🔍 Vérification de Diplôme</h1>
+                <h1>🔍 Diploma Verification</h1>
               </div>
               <div class="content">
-                <h2>Notification de Vérification</h2>
-                <p>Cher/Chère ${studentName},</p>
+                <h2>Verification Notification</h2>
+                <p>Dear ${studentName},</p>
                 
                 <div class="info-box">
-                  <p><strong>Entreprise vérificatrice:</strong> ${companyName}</p>
-                  <p><strong>Date:</strong> ${date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                  <p><strong>Heure:</strong> ${date.toLocaleTimeString('fr-FR')}</p>
+                  <p><strong>Verifying company:</strong> ${companyName}</p>
+                  <p><strong>Date:</strong> ${date.toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                  <p><strong>Time:</strong> ${date.toLocaleTimeString('en-US')}</p>
                 </div>
                 
-                <p>Votre diplôme a été vérifié avec succès. Cette vérification est enregistrée dans notre système pour référence.</p>
+                <p>Your diploma has been successfully verified. This verification has been recorded in our system for reference.</p>
                 
-                <p>Si vous n'avez pas autorisé cette vérification, veuillez nous contacter immédiatement.</p>
+                <p>If you did not authorize this verification, please contact us immediately.</p>
               </div>
               <div class="footer">
                 <p>DiplomaVerif © ${new Date().getFullYear()}</p>
-                <p>Cet email est automatique, merci de ne pas y répondre.</p>
+                <p>This email is automated, please do not reply to it.</p>
               </div>
             </div>
           </body>
@@ -177,16 +177,16 @@ class EmailService {
   }
 
   /**
-   * Méthode générique pour envoyer un email
-   * @param mailOptions - Les options de l'email
+   * Generic method to send an email
+   * @param mailOptions - Email options
    */
   private async sendEmail(mailOptions: nodemailer.SendMailOptions): Promise<void> {
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Email envoyé à ${mailOptions.to}:`, info.messageId);
+      console.log(`✅ Email sent to ${mailOptions.to}:`, info.messageId);
     } catch (error) {
-      console.error('❌ Erreur lors de l\'envoi de l\'email:', error);
-      // Ne pas faire échouer l'opération si l'email échoue
+      console.error('❌ Error sending email:', error);
+      // Do not fail the operation if email fails
     }
   }
 }

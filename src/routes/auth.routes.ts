@@ -3,18 +3,18 @@ import authController from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
 /**
- * Routes d'authentification
- * Gère la connexion, la récupération du profil et le changement de mot de passe
+ * Authentication routes
+ * Handles login, profile retrieval, and password change
  */
 const router = Router();
 
-// POST /api/auth/login - Connexion d'un utilisateur
+// POST /api/auth/login - User login
 router.post('/login', authController.login.bind(authController));
 
-// GET /api/auth/me - Récupérer les informations de l'utilisateur connecté
+// GET /api/auth/me - Retrieve logged-in user information
 router.get('/me', authenticate, authController.getMe.bind(authController));
 
-// POST /api/auth/change-password - Changer le mot de passe
+// POST /api/auth/change-password - Change password
 router.post('/change-password', authenticate, authController.changePassword.bind(authController));
 
 export default router;

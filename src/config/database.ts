@@ -1,39 +1,39 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 
-// Chargement des variables d'environnement
+// Load environment variables
 dotenv.config();
 
 /**
- * Instance unique du client Prisma
- * Gère la connexion à la base de données MySQL
+ * Unique Prisma client instance
+ * Manages connection to MySQL database
  */
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 /**
- * Fonction pour initialiser la connexion à la base de données
+ * Function to initialize database connection
  */
 export const connectDatabase = async (): Promise<void> => {
   try {
     await prisma.$connect();
-    console.log('✅ Connexion à la base de données MySQL établie');
+    console.log('✅ MySQL database connection established');
   } catch (error) {
-    console.error('❌ Erreur de connexion à la base de données:', error);
+    console.error('❌ Database connection error:', error);
     throw error;
   }
 };
 
 /**
- * Fonction pour fermer la connexion à la base de données
+ * Function to close database connection
  */
 export const disconnectDatabase = async (): Promise<void> => {
   try {
     await prisma.$disconnect();
-    console.log('✅ Connexion à la base de données fermée');
+    console.log('✅ Database connection closed');
   } catch (error) {
-    console.error('❌ Erreur lors de la fermeture de la connexion:', error);
+    console.error('❌ Error closing connection:', error);
     throw error;
   }
 };

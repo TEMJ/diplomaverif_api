@@ -1,10 +1,10 @@
 # 📡 API Reference - DiplomaVerif
 
-Documentation complète des endpoints API de DiplomaVerif.
+Complete documentation of DiplomaVerif API endpoints.
 
-## 🔐 Authentification
+## 🔐 Authentication
 
-### Connexion
+### Login
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -15,11 +15,11 @@ Content-Type: application/json
 }
 ```
 
-**Réponse:** `200 OK`
+**Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Connexion réussie",
+  "message": "Login successful",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIs...",
     "user": {
@@ -31,93 +31,93 @@ Content-Type: application/json
 }
 ```
 
-### Profil Utilisateur
+### User Profile
 ```http
 GET /api/auth/me
 Authorization: Bearer {token}
 ```
 
-### Changer le Mot de Passe
-```http
+### Change Password
+```
 POST /api/auth/change-password
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "currentPassword": "ancien",
-  "newPassword": "nouveau"
+  "currentPassword": "old",
+  "newPassword": "new"
 }
 ```
 
-## 🏫 Universités
+## 🏫 Universities
 
-### Liste des Universités
+### Universities List
 ```http
 GET /api/universities
 Authorization: Bearer {token}
 ```
 
-**Filtres:** Aucun
+**Filters:** None
 
-### Détails d'une Université
+### University Details
 ```http
 GET /api/universities/{id}
 Authorization: Bearer {token}
 ```
 
-### Créer une Université (ADMIN)
+### Create University (ADMIN)
 ```http
 POST /api/universities
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "name": "Université de Test",
-  "address": "123 Rue de Test",
-  "contactEmail": "contact@test.fr",
-  "phone": "+33 1 23 45 67 89",
+  "name": "Test University",
+  "address": "123 Test Street",
+  "contactEmail": "contact@test.com",
+  "phone": "+1 234 567 8900",
   "logoUrl": "https://example.com/logo.png"
 }
 ```
 
-### Modifier une Université (ADMIN)
+### Update University (ADMIN)
 ```http
 PUT /api/universities/{id}
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "name": "Nouveau Nom"
+  "name": "New Name"
 }
 ```
 
-### Supprimer une Université (ADMIN)
+### Delete University (ADMIN)
 ```http
 DELETE /api/universities/{id}
 Authorization: Bearer {token}
 ```
 
-## 👥 Étudiants
+## 👥 Students
 
-### Liste des Étudiants
+### Students List
 ```http
 GET /api/students?universityId={id}&major={major}&page=1&limit=20
 Authorization: Bearer {token}
 ```
 
-**Filtres:**
-- `universityId`: Filtrer par université
-- `major`: Filtrer par major
-- `page`: Numéro de page
-- `limit`: Nombre d'éléments par page
+**Filters:**
+- `universityId`: Filter by university
+- `major`: Filter by major
+- `page`: Page number
+- `limit`: Items per page
 
-### Détails d'un Étudiant
+### Student Details
 ```http
 GET /api/students/{id}
 Authorization: Bearer {token}
 ```
 
-### Créer un Étudiant (UNIVERSITY, ADMIN)
+### Create Student (UNIVERSITY, ADMIN)
 ```http
 POST /api/students
 Authorization: Bearer {token}
@@ -126,52 +126,52 @@ Content-Type: application/json
 {
   "universityId": "univ-uuid",
   "matricule": "STUD2024001",
-  "email": "etudiant@test.fr",
+  "email": "student@test.com",
   "dateOfBirth": "2000-05-15",
-  "major": "Informatique",
+  "major": "Computer Science",
   "photoUrl": "https://example.com/photo.jpg"
 }
 ```
 
-### Modifier un Étudiant (UNIVERSITY, ADMIN)
+### Update Student (UNIVERSITY, ADMIN)
 ```http
 PUT /api/students/{id}
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "major": "Mathématiques"
+  "major": "Mathematics"
 }
 ```
 
-### Supprimer un Étudiant (ADMIN)
+### Delete Student (ADMIN)
 ```http
 DELETE /api/students/{id}
 Authorization: Bearer {token}
 ```
 
-## 📜 Certificats
+## 📜 Certificates
 
-### Liste des Certificats
+### Certificates List
 ```http
 GET /api/certificates?studentId={id}&universityId={id}&status={ACTIVE|REVOKED}&page=1&limit=20
 Authorization: Bearer {token}
 ```
 
-**Filtres:**
-- `studentId`: Filtrer par étudiant
-- `universityId`: Filtrer par université
-- `status`: Filtrer par statut (ACTIVE, REVOKED)
-- `page`: Numéro de page
-- `limit`: Nombre d'éléments par page
+**Filters:**
+- `studentId`: Filter by student
+- `universityId`: Filter by university
+- `status`: Filter by status (ACTIVE, REVOKED)
+- `page`: Page number
+- `limit`: Items per page
 
-### Détails d'un Certificat
+### Certificate Details
 ```http
 GET /api/certificates/{id}
 Authorization: Bearer {token}
 ```
 
-### Créer un Certificat (UNIVERSITY, ADMIN)
+### Create Certificate (UNIVERSITY, ADMIN)
 ```http
 POST /api/certificates
 Authorization: Bearer {token}
@@ -180,16 +180,16 @@ Content-Type: application/json
 {
   "studentId": "student-uuid",
   "universityId": "univ-uuid",
-  "degreeTitle": "Master en Informatique",
-  "specialization": "IA",
+  "degreeTitle": "Master in Computer Science",
+  "specialization": "AI",
   "graduationDate": "2024-06-30",
   "pdfUrl": "https://example.com/diploma.pdf"
 }
 ```
 
-**Note:** Le QR code est généré automatiquement
+**Note:** QR code is generated automatically
 
-### Modifier un Certificat (UNIVERSITY, ADMIN)
+### Update Certificate (UNIVERSITY, ADMIN)
 ```http
 PUT /api/certificates/{id}
 Authorization: Bearer {token}
@@ -200,53 +200,53 @@ Content-Type: application/json
 }
 ```
 
-### Révoquer un Certificat (UNIVERSITY, ADMIN)
+### Revoke Certificate (UNIVERSITY, ADMIN)
 ```http
 PATCH /api/certificates/{id}/revoke
 Authorization: Bearer {token}
 ```
 
-### Supprimer un Certificat (ADMIN)
+### Delete Certificate (ADMIN)
 ```http
 DELETE /api/certificates/{id}
 Authorization: Bearer {token}
 ```
 
-### Vérifier un Certificat (PUBLIC)
+### Verify Certificate (PUBLIC)
 ```http
 GET /api/certificates/verify/{qrHash}
 ```
 
-**Réponse:** `200 OK`
+**Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Certificat valide",
+  "message": "Certificate valid",
   "data": {
     "certificate": {
-      "degreeTitle": "Master en Informatique",
-      "specialization": "IA",
+      "degreeTitle": "Master in Computer Science",
+      "specialization": "AI",
       "status": "ACTIVE"
     }
   }
 }
 ```
 
-## 🔍 Vérifications
+## 🔍 Verifications
 
-### Liste des Vérifications
+### Verifications List
 ```http
 GET /api/verifications?certificateId={id}&page=1&limit=20
 Authorization: Bearer {token}
 ```
 
-### Détails d'une Vérification
+### Verification Details
 ```http
 GET /api/verifications/{id}
 Authorization: Bearer {token}
 ```
 
-### Créer une Vérification
+### Create Verification
 ```http
 POST /api/verifications
 Authorization: Bearer {token}
@@ -256,37 +256,37 @@ Content-Type: application/json
   "certificateId": "cert-uuid",
   "companyName": "TechCorp",
   "email": "hr@techcorp.com",
-  "reason": "Vérification pré-emploi"
+  "reason": "Pre-employment verification"
 }
 ```
 
-### Supprimer une Vérification (ADMIN)
+### Delete Verification (ADMIN)
 ```http
 DELETE /api/verifications/{id}
 Authorization: Bearer {token}
 ```
 
-## 📁 Dossiers Étudiants
+## 📁 Student Records
 
-### Liste des Dossiers
+### Records List
 ```http
 GET /api/student-records?studentId={id}&page=1&limit=20
 Authorization: Bearer {token}
 ```
 
-### Détails d'un Dossier
+### Record Details
 ```http
 GET /api/student-records/{id}
 Authorization: Bearer {token}
 ```
 
-### Dossier par Étudiant
+### Record by Student
 ```http
 GET /api/student-records/student/{studentId}
 Authorization: Bearer {token}
 ```
 
-### Créer un Dossier (UNIVERSITY, ADMIN)
+### Create Record (UNIVERSITY, ADMIN)
 ```http
 POST /api/student-records
 Authorization: Bearer {token}
@@ -295,14 +295,14 @@ Content-Type: application/json
 {
   "studentId": "student-uuid",
   "attendance": 85,
-  "discipline": "Excellent comportement",
+  "discipline": "Excellent behavior",
   "gradesPdfUrl": "https://example.com/grades.pdf",
   "transcriptPdfUrl": "https://example.com/transcript.pdf",
   "diplomaPdfUrl": "https://example.com/diploma.pdf"
 }
 ```
 
-### Modifier un Dossier (UNIVERSITY, ADMIN)
+### Update Record (UNIVERSITY, ADMIN)
 ```http
 PUT /api/student-records/{id}
 Authorization: Bearer {token}
@@ -313,45 +313,45 @@ Content-Type: application/json
 }
 ```
 
-### Supprimer un Dossier (ADMIN)
+### Delete Record (ADMIN)
 ```http
 DELETE /api/student-records/{id}
 Authorization: Bearer {token}
 ```
 
-## 🚨 Codes d'Erreur
+## 🚨 Error Codes
 
 | Code | Description |
 |------|-------------|
-| 200  | Succès |
-| 201  | Créé avec succès |
-| 400  | Requête invalide |
-| 401  | Non authentifié |
-| 403  | Accès interdit |
-| 404  | Ressource introuvable |
-| 409  | Conflit (doublon) |
-| 500  | Erreur serveur |
+| 200  | Success |
+| 201  | Created successfully |
+| 400  | Invalid request |
+| 401  | Not authenticated |
+| 403  | Access forbidden |
+| 404  | Resource not found |
+| 409  | Conflict (duplicate) |
+| 500  | Server error |
 
-## 📝 Format des Réponses
+## 📝 Response Format
 
-### Succès
+### Success
 ```json
 {
   "success": true,
-  "message": "Opération réussie",
+  "message": "Operation successful",
   "data": { ... }
 }
 ```
 
-### Erreur
+### Error
 ```json
 {
   "success": false,
-  "message": "Description de l'erreur"
+  "message": "Error description"
 }
 ```
 
-### Liste Paginée
+### Paginated List
 ```json
 {
   "success": true,
@@ -384,18 +384,18 @@ Authorization: Bearer {token}
 | Records (POST/PUT) | ✅ | ✅ | ❌ | ❌ |
 | Records (DELETE) | ✅ | ❌ | ❌ | ❌ |
 
-## 🔗 Exemples
+## 🔗 Examples
 
-### Workflow Complet
+### Complete Workflow
 
-1. **Connexion**
+1. **Login**
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@diplomaverif.com","password":"Password123!"}'
 ```
 
-2. **Créer une Université**
+2. **Create University**
 ```bash
 curl -X POST http://localhost:3000/api/universities \
   -H "Authorization: Bearer {token}" \
@@ -403,7 +403,7 @@ curl -X POST http://localhost:3000/api/universities \
   -d '{...}'
 ```
 
-3. **Créer un Étudiant**
+3. **Create Student**
 ```bash
 curl -X POST http://localhost:3000/api/students \
   -H "Authorization: Bearer {token}" \
@@ -411,7 +411,7 @@ curl -X POST http://localhost:3000/api/students \
   -d '{...}'
 ```
 
-4. **Créer un Certificat**
+4. **Create Certificate**
 ```bash
 curl -X POST http://localhost:3000/api/certificates \
   -H "Authorization: Bearer {token}" \
@@ -419,10 +419,10 @@ curl -X POST http://localhost:3000/api/certificates \
   -d '{...}'
 ```
 
-5. **Vérifier le Certificat**
+5. **Verify Certificate**
 ```bash
 curl -X GET http://localhost:3000/api/certificates/verify/{qrHash}
 ```
 
-Pour plus d'informations, consultez le [README.md](README.md).
+For more information, see [README.md](README.md).
 

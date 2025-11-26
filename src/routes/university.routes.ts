@@ -4,27 +4,27 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 import { Role } from '@prisma/client';
 
 /**
- * Routes pour la gestion des universités
- * CRUD complet pour les universités
+ * Routes for managing universities
+ * Complete CRUD for universities
  */
 const router = Router();
 
-// Toutes les routes nécessitent une authentification
+// All routes require authentication
 router.use(authenticate);
 
-// GET /api/universities - Récupérer toutes les universités
+// GET /api/universities - Retrieve all universities
 router.get('/', universityController.getAll.bind(universityController));
 
-// GET /api/universities/:id - Récupérer une université par ID
+// GET /api/universities/:id - Retrieve university by ID
 router.get('/:id', universityController.getById.bind(universityController));
 
-// POST /api/universities - Créer une nouvelle université (ADMIN uniquement)
+// POST /api/universities - Create new university (ADMIN only)
 router.post('/', authorize(Role.ADMIN), universityController.create.bind(universityController));
 
-// PUT /api/universities/:id - Mettre à jour une université (ADMIN uniquement)
+// PUT /api/universities/:id - Update university (ADMIN only)
 router.put('/:id', authorize(Role.ADMIN), universityController.update.bind(universityController));
 
-// DELETE /api/universities/:id - Supprimer une université (ADMIN uniquement)
+// DELETE /api/universities/:id - Delete university (ADMIN only)
 router.delete('/:id', authorize(Role.ADMIN), universityController.delete.bind(universityController));
 
 export default router;

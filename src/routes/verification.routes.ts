@@ -4,24 +4,24 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 import { Role } from '@prisma/client';
 
 /**
- * Routes pour la gestion des vérifications de certificats
- * CRUD complet pour les vérifications
+ * Routes for managing certificate verifications
+ * Complete CRUD for verifications
  */
 const router = Router();
 
-// Toutes les routes nécessitent une authentification
+// All routes require authentication
 router.use(authenticate);
 
-// GET /api/verifications - Récupérer toutes les vérifications (avec filtres)
+// GET /api/verifications - Retrieve all verifications (with filters)
 router.get('/', verificationController.getAll.bind(verificationController));
 
-// GET /api/verifications/:id - Récupérer une vérification par ID
+// GET /api/verifications/:id - Retrieve verification by ID
 router.get('/:id', verificationController.getById.bind(verificationController));
 
-// POST /api/verifications - Créer une nouvelle vérification (public mais loggé)
+// POST /api/verifications - Create new verification (authenticated users)
 router.post('/', verificationController.create.bind(verificationController));
 
-// DELETE /api/verifications/:id - Supprimer une vérification (ADMIN uniquement)
+// DELETE /api/verifications/:id - Delete verification (ADMIN only)
 router.delete('/:id', authorize(Role.ADMIN), verificationController.delete.bind(verificationController));
 
 export default router;

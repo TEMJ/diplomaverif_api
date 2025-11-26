@@ -1,7 +1,7 @@
 {
   "name": "diplomaverif",
   "version": "1.0.0",
-  "description": "Plateforme de vérification de diplômes par QR code",
+  "description": "Diploma verification platform using QR codes",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

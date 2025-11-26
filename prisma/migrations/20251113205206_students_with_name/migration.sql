@@ -17,6 +17,8 @@ CREATE TABLE `students` (
     `id` VARCHAR(191) NOT NULL,
     `university_id` VARCHAR(191) NOT NULL,
     `matricule` VARCHAR(50) NOT NULL,
+    `first_name` VARCHAR(255) NOT NULL,
+    `last_name` VARCHAR(255) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `photo_url` VARCHAR(500) NULL,
     `date_of_birth` DATETIME(3) NOT NULL,

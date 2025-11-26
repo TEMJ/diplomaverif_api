@@ -1,229 +1,229 @@
-# 🎓 DiplomaVerif - Plateforme de Vérification de Diplômes
+# 🎓 DiplomaVerif - Diploma Verification Platform
 
-Une plateforme complète de vérification de diplômes utilisant des QR codes pour sécuriser et authentifier les certificats universitaires.
+A complete platform for diploma verification using QR codes to secure and authenticate university certificates.
 
-## 📋 Table des Matières
+## 📋 Table of Contents
 
-- [Fonctionnalités](#fonctionnalités)
+- [Features](#features)
 - [Architecture](#architecture)
 - [Technologies](#technologies)
-- [Prérequis](#prérequis)
+- [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Migration de la Base de Données](#migration-de-la-base-de-données)
-- [Seed des Données](#seed-des-données)
-- [Démarrage](#démarrage)
+- [Database Migration](#database-migration)
+- [Seed Data](#seed-data)
+- [Startup](#startup)
 - [API Endpoints](#api-endpoints)
-- [Authentification](#authentification)
-- [Rôles et Permissions](#rôles-et-permissions)
-- [Exemples d'Utilisation](#exemples-dutilisation)
-- [Structure du Projet](#structure-du-projet)
-- [Sécurité](#sécurité)
+- [Authentication](#authentication)
+- [Roles and Permissions](#roles-and-permissions)
+- [Usage Examples](#usage-examples)
+- [Project Structure](#project-structure)
+- [Security](#security)
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-### 🔐 Gestion des Utilisateurs
-- **Authentification JWT** sécurisée avec bcrypt
-- **Trois rôles**: Admin, Université, Étudiant
-- **Création automatique** de comptes utilisateurs lors de la création d'universités/étudiants
-- **Emails automatiques** avec mots de passe temporaires
-- **Changement de mot de passe** sécurisé
+### 🔐 User Management
+- **Secure JWT authentication** with bcrypt
+- **Three roles**: Admin, University, Student
+- **Automatic account creation** when creating universities/students
+- **Automatic emails** with temporary passwords
+- **Secure password change**
 
-### 🏫 Gestion des Universités
-- CRUD complet pour les universités
-- Gestion des logos et informations de contact
-- Association automatique d'un compte utilisateur
+### 🏫 University Management
+- Complete CRUD for universities
+- Logo and contact information management
+- Automatic user account association
 
-### 👥 Gestion des Étudiants
-- CRUD complet pour les étudiants
-- **Filtrage par université et major**
-- Matricules uniques
-- Photos et informations personnelles
-- Gestion des dossiers étudiants complets
+### 👥 Student Management
+- Complete CRUD for students
+- **Filtering by university and major**
+- Unique matricules
+- Photos and personal information
+- Complete student record management
 
-### 📜 Gestion des Certificats/Diplômes
-- CRUD complet pour les certificats
-- **Génération automatique de QR codes**
-- Hash unique pour chaque certificat
-- Statut ACTIVE ou REVOKED
-- Vérification publique via QR code
+### 📜 Certificate/Diploma Management
+- Complete CRUD for certificates
+- **Automatic QR code generation**
+- Unique hash for each certificate
+- ACTIVE or REVOKED status
+- Public verification via QR code
 
-### 🔍 Vérifications
-- Enregistrement de toutes les vérifications
-- IP tracking et horodatage
-- Notifications email aux étudiants
-- Historique complet par certificat
+### 🔍 Verifications
+- Recording of all verifications
+- IP tracking and timestamping
+- Email notifications to students
+- Complete history per certificate
 
-### 📁 Dossiers Étudiants
-- Assiduité (pourcentage)
-- Évaluation disciplinaire
-- Notes (PDF)
-- Relevés de notes (PDF)
-- Diplômes (PDF)
+### 📁 Student Records
+- Attendance (percentage)
+- Disciplinary evaluation
+- Grades (PDF)
+- Transcripts (PDF)
+- Diplomas (PDF)
 
 ## 🏗 Architecture
 
 ```
 DiplomaVerif/
 ├── prisma/
-│   ├── schema.prisma       # Schéma de base de données
-│   └── seed.ts             # Données de test
+│   ├── schema.prisma       # Database schema
+│   └── seed.ts             # Test data
 ├── src/
 │   ├── config/
-│   │   ├── database.ts     # Configuration Prisma
-│   │   └── env.ts          # Variables d'environnement
-│   ├── controllers/        # Contrôleurs de logique métier
-│   ├── middleware/         # Middlewares Express
-│   ├── routes/             # Routes API
+│   │   ├── database.ts     # Prisma configuration
+│   │   └── env.ts          # Environment variables
+│   ├── controllers/        # Business logic controllers
+│   ├── middleware/         # Express middlewares
+│   ├── routes/             # API routes
 │   ├── services/           # Services (auth, email, qrcode)
-│   ├── app.ts              # Configuration Express
-│   └── server.ts           # Point d'entrée
-├── uploads/                # Fichiers uploadés
-├── .env                    # Configuration locale
+│   ├── app.ts              # Express configuration
+│   └── server.ts           # Entry point
+├── uploads/                # Uploaded files
+├── .env                    # Local configuration
 └── package.json
 ```
 
 ## 🛠 Technologies
 
-- **Runtime**: Node.js avec TypeScript
+- **Runtime**: Node.js with TypeScript
 - **ORM**: Prisma
-- **Base de données**: MySQL
-- **Authentification**: JWT + bcrypt
+- **Database**: MySQL
+- **Authentication**: JWT + bcrypt
 - **Email**: Nodemailer
 - **QR Codes**: qrcode
 - **Framework**: Express.js
 - **Validation**: express-validator
 
-## 📦 Prérequis
+## 📦 Prerequisites
 
 - Node.js >= 18.x
 - MySQL >= 8.0
-- npm ou yarn
-- Un compte email pour SMTP (ex: Gmail)
+- npm or yarn
+- An email account for SMTP (ex: Gmail)
 
 ## 🚀 Installation
 
-### 1. Cloner et Installer les Dépendances
+### 1. Clone and Install Dependencies
 
 ```bash
 cd "New folder"
 npm install
 ```
 
-### 2. Configuration de la Base de Données
+### 2. Database Configuration
 
-Créez une base de données MySQL:
+Create a MySQL database:
 
 ```sql
 CREATE DATABASE diplomaverif CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 3. Configuration de l'Email (Gmail)
+### 3. Email Configuration (Gmail)
 
-Pour utiliser Gmail comme service SMTP:
+To use Gmail as SMTP service:
 
-1. Activez l'**authentification à deux facteurs** sur votre compte Gmail
-2. Générez un **mot de passe d'application**:
-   - Aller sur https://myaccount.google.com/apppasswords
-   - Créer un nouveau mot de passe d'application
-   - Copier le mot de passe généré
+1. Enable **two-factor authentication** on your Gmail account
+2. Generate an **app password**:
+   - Go to https://myaccount.google.com/apppasswords
+   - Create a new app password
+   - Copy the generated password
 
 ## ⚙️ Configuration
 
-### Fichier `.env`
+### `.env` File
 
-Modifiez le fichier `.env` avec vos configurations:
+Edit the `.env` file with your configurations:
 
 ```env
-# Base de données MySQL
+# MySQL Database
 DATABASE_URL="mysql://username:password@localhost:3306/diplomaverif"
 
 # JWT
-JWT_SECRET="votre_secret_jwt_tres_securise_changez_cela_en_production"
+JWT_SECRET="your_very_secure_jwt_secret_change_this_in_production"
 JWT_EXPIRES_IN="7d"
 
-# Email SMTP (exemple Gmail)
+# SMTP Email (Gmail example)
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="votre_email@gmail.com"
-SMTP_PASSWORD="votre_mot_de_passe_application"
+SMTP_USER="your_email@gmail.com"
+SMTP_PASSWORD="your_app_password"
 SMTP_FROM="DiplomaVerif <noreply@diplomaverif.com>"
 
-# Serveur
+# Server
 PORT=3000
 NODE_ENV="development"
 BASE_URL="http://localhost:3000"
 
-# Stockage
+# Storage
 UPLOAD_DIR="./uploads"
 ```
 
-## 🗄 Migration de la Base de Données
+## 🗄 Database Migration
 
-Générer le client Prisma et appliquer les migrations:
+Generate Prisma client and apply migrations:
 
 ```bash
-# Générer le client Prisma
+# Generate Prisma client
 npm run prisma:generate
 
-# Créer et appliquer les migrations
+# Create and apply migrations
 npm run prisma:migrate
 ```
 
-Cette commande va:
-- Créer toutes les tables selon le schéma Prisma
-- Appliquer les contraintes et index
-- Créer les relations entre tables
+This command will:
+- Create all tables according to Prisma schema
+- Apply constraints and indexes
+- Create relationships between tables
 
-## 🌱 Seed des Données
+## 🌱 Seed Data
 
-Populer la base de données avec des données de test:
+Populate the database with test data:
 
 ```bash
 npm run prisma:seed
 ```
 
-Cette commande crée:
-- ✅ 10 universités
-- ✅ 1 administrateur (email: admin@diplomaverif.com)
-- ✅ 10 utilisateurs universitaires
-- ✅ 100 étudiants (10 par université)
-- ✅ 100 utilisateurs étudiants
-- ✅ 100 dossiers étudiants
-- ✅ 100 certificats avec QR codes
-- ✅ 50 vérifications
+This command creates:
+- ✅ 10 universities
+- ✅ 1 administrator (email: admin@diplomaverif.com)
+- ✅ 10 university users
+- ✅ 100 students (10 per university)
+- ✅ 100 student users
+- ✅ 100 student records
+- ✅ 100 certificates with QR codes
+- ✅ 50 verifications
 
-**Mot de passe par défaut pour tous les comptes**: `Password123!`
+**Default password for all accounts**: `Password123!`
 
-## ▶️ Démarrage
+## ▶️ Startup
 
-### Mode Développement
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-Le serveur démarre sur `http://localhost:3000`
+Server starts on `http://localhost:3000`
 
-### Mode Production
+### Production Mode
 
 ```bash
-# Compiler TypeScript
+# Compile TypeScript
 npm run build
 
-# Démarrer le serveur
+# Start server
 npm start
 ```
 
-### Prisma Studio (Interface Graphique)
+### Prisma Studio (Graphical Interface)
 
-Pour visualiser et gérer la base de données:
+To view and manage the database:
 
 ```bash
 npm run prisma:studio
 ```
 
-Interface disponible sur `http://localhost:5555`
+Interface available at `http://localhost:5555`
 
 ## 🔌 API Endpoints
 
@@ -232,84 +232,84 @@ Interface disponible sur `http://localhost:5555`
 GET /health
 ```
 
-### Authentification
+### Authentication
 ```
-POST   /api/auth/login              # Connexion
-GET    /api/auth/me                 # Profil utilisateur
-POST   /api/auth/change-password    # Changer le mot de passe
-```
-
-### Universités
-```
-GET    /api/universities            # Liste des universités
-GET    /api/universities/:id        # Détails d'une université
-POST   /api/universities            # Créer (ADMIN)
-PUT    /api/universities/:id        # Modifier (ADMIN)
-DELETE /api/universities/:id        # Supprimer (ADMIN)
+POST   /api/auth/login              # Login
+GET    /api/auth/me                 # User profile
+POST   /api/auth/change-password    # Change password
 ```
 
-### Étudiants
+### Universities
 ```
-GET    /api/students                # Liste des étudiants
-GET    /api/students/:id            # Détails d'un étudiant
-POST   /api/students                # Créer (UNIVERSITY, ADMIN)
-PUT    /api/students/:id            # Modifier (UNIVERSITY, ADMIN)
-DELETE /api/students/:id            # Supprimer (ADMIN)
+GET    /api/universities            # List universities
+GET    /api/universities/:id        # University details
+POST   /api/universities            # Create (ADMIN)
+PUT    /api/universities/:id        # Update (ADMIN)
+DELETE /api/universities/:id        # Delete (ADMIN)
+```
 
-# Filtres disponibles:
+### Students
+```
+GET    /api/students                # List students
+GET    /api/students/:id            # Student details
+POST   /api/students                # Create (UNIVERSITY, ADMIN)
+PUT    /api/students/:id            # Update (UNIVERSITY, ADMIN)
+DELETE /api/students/:id            # Delete (ADMIN)
+
+# Available filters:
 GET /api/students?universityId=xxx
-GET /api/students?major=Informatique
+GET /api/students?major=Computer Science
 GET /api/students?page=1&limit=20
 ```
 
-### Certificats
+### Certificates
 ```
-GET    /api/certificates                      # Liste des certificats
-GET    /api/certificates/:id                  # Détails d'un certificat
-POST   /api/certificates                      # Créer (UNIVERSITY, ADMIN)
-PUT    /api/certificates/:id                  # Modifier (UNIVERSITY, ADMIN)
-PATCH  /api/certificates/:id/revoke           # Révoquer (UNIVERSITY, ADMIN)
-DELETE /api/certificates/:id                  # Supprimer (ADMIN)
-GET    /api/certificates/verify/:qrHash       # Vérifier par QR (PUBLIC)
+GET    /api/certificates                      # List certificates
+GET    /api/certificates/:id                  # Certificate details
+POST   /api/certificates                      # Create (UNIVERSITY, ADMIN)
+PUT    /api/certificates/:id                  # Update (UNIVERSITY, ADMIN)
+PATCH  /api/certificates/:id/revoke           # Revoke (UNIVERSITY, ADMIN)
+DELETE /api/certificates/:id                  # Delete (ADMIN)
+GET    /api/certificates/verify/:qrHash       # Verify by QR (PUBLIC)
 
-# Filtres disponibles:
+# Available filters:
 GET /api/certificates?studentId=xxx
 GET /api/certificates?universityId=xxx
 GET /api/certificates?status=ACTIVE
 GET /api/certificates?page=1&limit=20
 ```
 
-### Vérifications
+### Verifications
 ```
-GET    /api/verifications           # Liste des vérifications
-GET    /api/verifications/:id       # Détails d'une vérification
-POST   /api/verifications           # Créer
-DELETE /api/verifications/:id       # Supprimer (ADMIN)
+GET    /api/verifications           # List verifications
+GET    /api/verifications/:id       # Verification details
+POST   /api/verifications           # Create
+DELETE /api/verifications/:id       # Delete (ADMIN)
 
-# Filtres disponibles:
+# Available filters:
 GET /api/verifications?certificateId=xxx
 GET /api/verifications?page=1&limit=20
 ```
 
-### Dossiers Étudiants
+### Student Records
 ```
-GET    /api/student-records                    # Liste des dossiers
-GET    /api/student-records/:id                # Détails d'un dossier
-GET    /api/student-records/student/:studentId # Par étudiant
-POST   /api/student-records                    # Créer (UNIVERSITY, ADMIN)
-PUT    /api/student-records/:id                # Modifier (UNIVERSITY, ADMIN)
-DELETE /api/student-records/:id                # Supprimer (ADMIN)
+GET    /api/student-records                    # List records
+GET    /api/student-records/:id                # Record details
+GET    /api/student-records/student/:studentId # By student
+POST   /api/student-records                    # Create (UNIVERSITY, ADMIN)
+PUT    /api/student-records/:id                # Update (UNIVERSITY, ADMIN)
+DELETE /api/student-records/:id                # Delete (ADMIN)
 ```
 
-## 🔒 Authentification
+## 🔒 Authentication
 
-Toutes les routes (sauf `/api/auth/login` et `/api/certificates/verify/:qrHash`) nécessitent un token JWT dans le header:
+All routes (except `/api/auth/login` and `/api/certificates/verify/:qrHash`) require a JWT token in the header:
 
 ```
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-### Exemple de Connexion
+### Login Example
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
@@ -324,7 +324,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Connexion réussie",
+  "message": "Login successful",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
@@ -336,48 +336,48 @@ Response:
 }
 ```
 
-## 👥 Rôles et Permissions
+## 👥 Roles and Permissions
 
 ### ADMIN
-- Accès complet à toutes les ressources
-- CRUD sur universités, étudiants, certificats, etc.
-- Suppression de ressources
-- Création d'administrateurs
+- Full access to all resources
+- CRUD on universities, students, certificates, etc.
+- Resource deletion
+- Admin creation
 
 ### UNIVERSITY
-- Voir ses propres données et étudiants
-- Créer et gérer des étudiants
-- Créer et gérer des certificats
-- Voir les vérifications de ses certificats
-- Gérer les dossiers étudiants
+- View own data and students
+- Create and manage students
+- Create and manage certificates
+- View verifications of own certificates
+- Manage student records
 
 ### STUDENT
-- Voir ses propres données
-- Voir ses certificats
-- Changer son mot de passe
-- Voir les vérifications de ses certificats
+- View own data
+- View own certificates
+- Change password
+- View verifications of own certificates
 
 ### PUBLIC
-- Vérifier un certificat via QR code
+- Verify certificate via QR code
 
-## 📝 Exemples d'Utilisation
+## 📝 Usage Examples
 
-### Créer une Université (Admin)
+### Create University (Admin)
 
 ```bash
 curl -X POST http://localhost:3000/api/universities \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Université de Test",
-    "address": "123 Rue de Test, Paris",
-    "contactEmail": "contact@univ-test.fr",
-    "phone": "+33 1 23 45 67 89",
+    "name": "Test University",
+    "address": "123 Test Street, City",
+    "contactEmail": "contact@univ-test.com",
+    "phone": "+1 234 567 8900",
     "logoUrl": "https://example.com/logo.png"
   }'
 ```
 
-### Créer un Étudiant (Université)
+### Create Student (University)
 
 ```bash
 curl -X POST http://localhost:3000/api/students \
@@ -386,14 +386,14 @@ curl -X POST http://localhost:3000/api/students \
   -d '{
     "universityId": "university-uuid",
     "matricule": "TEST2024001",
-    "email": "etudiant1@test.fr",
+    "email": "student1@test.com",
     "dateOfBirth": "2000-05-15",
-    "major": "Informatique",
+    "major": "Computer Science",
     "photoUrl": "https://example.com/photo.jpg"
   }'
 ```
 
-### Créer un Certificat (Université)
+### Create Certificate (University)
 
 ```bash
 curl -X POST http://localhost:3000/api/certificates \
@@ -402,27 +402,27 @@ curl -X POST http://localhost:3000/api/certificates \
   -d '{
     "studentId": "student-uuid",
     "universityId": "university-uuid",
-    "degreeTitle": "Master en Informatique",
-    "specialization": "Intelligence Artificielle",
+    "degreeTitle": "Master in Computer Science",
+    "specialization": "Artificial Intelligence",
     "graduationDate": "2024-06-30",
     "pdfUrl": "https://example.com/diploma.pdf"
   }'
 ```
 
-### Vérifier un Certificat par QR Code (Public)
+### Verify Certificate by QR Code (Public)
 
 ```bash
 curl -X GET http://localhost:3000/api/certificates/verify/YOUR_QR_HASH
 ```
 
-## 📂 Structure du Projet
+## 📂 Project Structure
 
 ```
 src/
 ├── config/              # Configuration
-│   ├── database.ts      # Client Prisma
-│   └── env.ts           # Variables d'environnement
-├── controllers/         # Contrôleurs
+│   ├── database.ts      # Prisma client
+│   └── env.ts           # Environment variables
+├── controllers/         # Controllers
 │   ├── auth.controller.ts
 │   ├── certificate.controller.ts
 │   ├── student.controller.ts
@@ -433,7 +433,7 @@ src/
 │   ├── auth.middleware.ts
 │   ├── error.middleware.ts
 │   └── validation.middleware.ts
-├── routes/              # Routes API
+├── routes/              # API Routes
 │   ├── auth.routes.ts
 │   ├── certificate.routes.ts
 │   ├── student.routes.ts
@@ -443,66 +443,66 @@ src/
 ├── services/            # Services
 │   ├── auth.service.ts      # JWT & bcrypt
 │   ├── email.service.ts     # Nodemailer
-│   └── qrcode.service.ts    # Génération QR
-├── app.ts               # Application Express
-└── server.ts            # Point d'entrée
+│   └── qrcode.service.ts    # QR generation
+├── app.ts               # Express application
+└── server.ts            # Entry point
 ```
 
-## 🔐 Sécurité
+## 🔐 Security
 
-### Mesures Implémentées
+### Implemented Measures
 
-- ✅ **Mots de passe hashés** avec bcrypt (10 rounds)
-- ✅ **JWT** avec expiration
-- ✅ **Validation des données** avec express-validator
-- ✅ **Protection CSRF** via token Bearer
-- ✅ **Authentification basée sur les rôles**
-- ✅ **Email vérifié** avant envoi
-- ✅ **Hash unique** pour chaque certificat
-- ✅ **Prévention des attaques** par injection SQL (Prisma)
-- ✅ **Gestion des erreurs** sécurisée
+- ✅ **Hashed passwords** with bcrypt (10 rounds)
+- ✅ **JWT** with expiration
+- ✅ **Data validation** with express-validator
+- ✅ **CSRF protection** via Bearer token
+- ✅ **Role-based authentication**
+- ✅ **Email verification** before sending
+- ✅ **Unique hash** for each certificate
+- ✅ **SQL injection prevention** (Prisma)
+- ✅ **Secure error handling**
 
-### Bonnes Pratiques
+### Best Practices
 
-- Changez le `JWT_SECRET` en production
-- Utilisez HTTPS en production
-- Configurez un firewall
-- Limitez les tentatives de connexion
-- Sauvegardez régulièrement la base de données
-- Gardez les dépendances à jour
+- Change `JWT_SECRET` in production
+- Use HTTPS in production
+- Configure firewall
+- Limit login attempts
+- Back up database regularly
+- Keep dependencies updated
 
-## 🐛 Dépannage
+## 🐛 Troubleshooting
 
-### Erreur de Connexion à la Base de Données
+### Database Connection Error
 
-Vérifiez que MySQL est démarré et que les credentials dans `.env` sont corrects.
+Verify that MySQL is running and credentials in `.env` are correct.
 
-### Erreur SMTP
+### SMTP Error
 
-Vérifiez votre configuration email dans `.env`:
-- Utiliser un mot de passe d'application pour Gmail
-- Vérifier le port (587 pour TLS, 465 pour SSL)
-- Vérifier que le firewall n bloque pas les connexions SMTP
+Verify your email configuration in `.env`:
+- Use app password for Gmail
+- Verify port (587 for TLS, 465 for SSL)
+- Verify firewall doesn't block SMTP connections
 
-### Erreur Prisma
+### Prisma Error
 
 ```bash
-# Réinitialiser la base de données
+# Reset database
 npx prisma migrate reset
 
-# Régénérer le client
+# Regenerate client
 npm run prisma:generate
 ```
 
 ## 📞 Support
 
-Pour toute question ou problème, consultez la documentation ou ouvrez une issue.
+For any questions or issues, consult the documentation or open an issue.
 
-## 📄 Licence
+## 📄 License
 
 MIT
 
 ---
 
-**Développé avec ❤️ pour sécuriser l'authentification des diplômes**
+**Developed with ❤️ to secure diploma authentication**
 

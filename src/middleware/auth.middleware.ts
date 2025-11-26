@@ -3,8 +3,8 @@ import authService, { JWTPayload } from '../services/auth.service';
 import { Role } from '@prisma/client';
 
 /**
- * Extension de l'interface Request d'Express
- * Ajoute les propriétés utilisateur au request
+ * Express Request interface extension
+ * Adds user properties to the request
  */
 declare global {
   namespace Express {
@@ -15,8 +15,8 @@ declare global {
 }
 
 /**
- * Middleware d'authentification
- * Vérifie la présence et la validité du token JWT
+ * Authentication middleware
+ * Verifies presence and validity of JWT token
  */
 export const authenticate = (
   req: Request,
@@ -24,80 +24,80 @@ export const authenticate = (
   next: NextFunction
 ): void => {
   try {
-    // Extraire le token du header Authorization
+    // Extract token from Authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
-        message: 'Token d\'authentification manquant ou invalide',
+        message: 'Missing or invalid authentication token',
       });
       return;
     }
 
-    // Extraire le token (supprimer "Bearer ")
+    // Extract token (remove "Bearer ")
     const token = authHeader.substring(7);
 
-    // Vérifier et décoder le token
+    // Verify and decode token
     const payload = authService.verifyToken(token);
 
     if (!payload) {
       res.status(401).json({
         success: false,
-        message: 'Token d\'authentification invalide ou expiré',
+        message: 'Invalid or expired authentication token',
       });
       return;
     }
 
-    // Ajouter les informations utilisateur au request
+    // Add user information to request
     req.user = payload;
 
-    // Passer au prochain middleware
+    // Pass to next middleware
     next();
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: 'Erreur d\'authentification',
+      message: 'Authentication error',
     });
   }
 };
 
 /**
- * Middleware d'autorisation basé sur les rôles
- * Vérifie que l'utilisateur a le bon rôle pour accéder à la route
- * @param allowedRoles - Les rôles autorisés à accéder à la route
+ * Role-based authorization middleware
+ * Verifies user has correct role to access route
+ * @param allowedRoles - Roles allowed to access route
  */
 export const authorize = (...allowedRoles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // Vérifier que l'utilisateur est authentifié
+    // Verify user is authenticated
     if (!req.user) {
       res.status(401).json({
         success: false,
-        message: 'Utilisateur non authentifié',
+        message: 'User not authenticated',
       });
       return;
     }
 
-    // Vérifier que le rôle de l'utilisateur est autorisé
+    // Verify user role is allowed
     if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
-        message: 'Accès interdit: permissions insuffisantes',
+        message: 'Access forbidden: insufficient permissions',
       });
       return;
     }
 
-    // Passer au prochain middleware
+    // Pass to next middleware
     next();
   };
 };
 
 /**
- * Middleware pour vérifier que l'utilisateur appartient à une université spécifique
- * Utile pour les routes où l'université peut seulement accéder à ses propres ressources
- * @param req - La requête Express
- * @param res - La réponse Express
- * @param next - Le prochain middleware
+ * Middleware to verify user belongs to specific university
+ * Useful for routes where university can only access its own resources
+ * @param req - Express request
+ * @param res - Express response
+ * @param next - Next middleware
  */
 export const authorizeUniversityAccess = (
   req: Request,
@@ -107,26 +107,26 @@ export const authorizeUniversityAccess = (
   if (!req.user) {
     res.status(401).json({
       success: false,
-      message: 'Utilisateur non authentifié',
+      message: 'User not authenticated',
     });
     return;
   }
 
-  // Les admins ont accès à tout
+  // Admins have access to everything
   if (req.user.role === Role.ADMIN) {
     next();
     return;
   }
 
-  // Les universités ne peuvent accéder qu'à leurs propres ressources
+  // Universities can only access their own resources
   if (req.user.role === Role.UNIVERSITY && req.user.universityId) {
-    // Vérifier que l'université ID correspond
+    // Check that university ID matches
     const requestedUniversityId = req.params.universityId || req.body.universityId;
     
     if (requestedUniversityId && requestedUniversityId !== req.user.universityId) {
       res.status(403).json({
         success: false,
-        message: 'Accès interdit: vous ne pouvez accéder qu\'à votre propre université',
+        message: 'Access forbidden: you can only access your own university',
       });
       return;
     }
@@ -136,10 +136,10 @@ export const authorizeUniversityAccess = (
 };
 
 /**
- * Middleware pour vérifier que l'utilisateur est un étudiant accédant à ses propres données
- * @param req - La requête Express
- * @param res - La réponse Express
- * @param next - Le prochain middleware
+ * Middleware to verify student accessing their own data
+ * @param req - Express request
+ * @param res - Express response
+ * @param next - Next middleware
  */
 export const authorizeStudentAccess = (
   req: Request,
@@ -149,25 +149,25 @@ export const authorizeStudentAccess = (
   if (!req.user) {
     res.status(401).json({
       success: false,
-      message: 'Utilisateur non authentifié',
+      message: 'User not authenticated',
     });
     return;
   }
 
-  // Les admins et universités ont accès à tout
+  // Admins and universities have access to everything
   if (req.user.role === Role.ADMIN || req.user.role === Role.UNIVERSITY) {
     next();
     return;
   }
 
-  // Les étudiants ne peuvent accéder qu'à leurs propres données
+  // Students can only access their own data
   if (req.user.role === Role.STUDENT && req.user.studentId) {
     const requestedStudentId = req.params.studentId || req.body.studentId;
     
     if (requestedStudentId && requestedStudentId !== req.user.studentId) {
       res.status(403).json({
         success: false,
-        message: 'Accès interdit: vous ne pouvez accéder qu\'à vos propres données',
+        message: 'Access forbidden: you can only access your own data',
       });
       return;
     }

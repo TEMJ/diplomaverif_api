@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
 
 /**
- * Middleware pour valider les résultats de la validation
+ * Middleware to validate validation results
  */
 export const validate = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
@@ -10,7 +10,7 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
   if (!errors.isEmpty()) {
     res.status(400).json({
       success: false,
-      message: 'Erreurs de validation',
+      message: 'Validation errors',
       errors: errors.array(),
     });
     return;
@@ -20,109 +20,117 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
 };
 
 /**
- * Règles de validation pour la connexion
+ * Validation rules for login
  */
 export const validateLogin = [
   body('email')
     .isEmail()
-    .withMessage('Email invalide'),
+    .withMessage('Invalid email'),
   body('password')
     .notEmpty()
-    .withMessage('Mot de passe requis'),
+    .withMessage('Password required'),
   validate,
 ];
 
 /**
- * Règles de validation pour la création d'une université
+ * Validation rules for creating a university
  */
 export const validateUniversityCreate = [
   body('name')
     .trim()
     .notEmpty()
-    .withMessage('Le nom est requis'),
+    .withMessage('Name is required'),
   body('address')
     .trim()
     .notEmpty()
-    .withMessage('L\'adresse est requise'),
+    .withMessage('Address is required'),
   body('contactEmail')
     .isEmail()
-    .withMessage('Email de contact invalide'),
+    .withMessage('Invalid contact email'),
   body('phone')
     .trim()
     .notEmpty()
-    .withMessage('Le numéro de téléphone est requis'),
+    .withMessage('Phone number is required'),
   validate,
 ];
 
 /**
- * Règles de validation pour la création d'un étudiant
+ * Validation rules for creating a student
  */
 export const validateStudentCreate = [
   body('universityId')
     .notEmpty()
-    .withMessage('L\'université est requise'),
+    .withMessage('University is required'),
   body('matricule')
     .trim()
     .notEmpty()
-    .withMessage('Le matricule est requis'),
+    .withMessage('Matricule is required'),
+  body('firstName')
+    .trim()
+    .notEmpty()
+    .withMessage('First name is required'),
+  body('lastName')
+    .trim()
+    .notEmpty()
+    .withMessage('Last name is required'),
   body('email')
     .isEmail()
-    .withMessage('Email invalide'),
+    .withMessage('Invalid email'),
   body('dateOfBirth')
     .isISO8601()
-    .withMessage('Date de naissance invalide'),
+    .withMessage('Invalid date of birth'),
   body('major')
     .trim()
     .notEmpty()
-    .withMessage('La major est requise'),
+    .withMessage('Major is required'),
   validate,
 ];
 
 /**
- * Règles de validation pour la création d'un certificat
+ * Validation rules for creating a certificate
  */
 export const validateCertificateCreate = [
   body('studentId')
     .notEmpty()
-    .withMessage('L\'étudiant est requis'),
+    .withMessage('Student is required'),
   body('universityId')
     .notEmpty()
-    .withMessage('L\'université est requise'),
+    .withMessage('University is required'),
   body('degreeTitle')
     .trim()
     .notEmpty()
-    .withMessage('Le titre du diplôme est requis'),
+    .withMessage('Degree title is required'),
   body('specialization')
     .trim()
     .notEmpty()
-    .withMessage('La spécialisation est requise'),
+    .withMessage('Specialization is required'),
   body('graduationDate')
     .isISO8601()
-    .withMessage('Date de graduation invalide'),
+    .withMessage('Invalid graduation date'),
   body('pdfUrl')
     .isURL()
-    .withMessage('URL du PDF invalide'),
+    .withMessage('Invalid PDF URL'),
   validate,
 ];
 
 /**
- * Règles de validation pour la création d'une vérification
+ * Validation rules for creating a verification
  */
 export const validateVerificationCreate = [
   body('certificateId')
     .notEmpty()
-    .withMessage('Le certificat est requis'),
+    .withMessage('Certificate is required'),
   body('companyName')
     .trim()
     .notEmpty()
-    .withMessage('Le nom de l\'entreprise est requis'),
+    .withMessage('Company name is required'),
   body('email')
     .isEmail()
-    .withMessage('Email invalide'),
+    .withMessage('Invalid email'),
   body('reason')
     .trim()
     .notEmpty()
-    .withMessage('La raison est requise'),
+    .withMessage('Reason is required'),
   validate,
 ];
 

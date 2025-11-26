@@ -4,33 +4,33 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 import { Role } from '@prisma/client';
 
 /**
- * Routes pour la gestion des certificats/diplômes
- * CRUD complet pour les certificats avec vérification par QR code
+ * Routes for managing certificates/diplomas
+ * Complete CRUD for certificates with QR code verification
  */
 const router = Router();
 
-// GET /api/certificates/verify/:qrHash - Vérifier un certificat par QR code (public)
+// GET /api/certificates/verify/:qrHash - Verify certificate by QR code (public)
 router.get('/verify/:qrHash', certificateController.verifyByHash.bind(certificateController));
 
-// Toutes les autres routes nécessitent une authentification
+// All other routes require authentication
 router.use(authenticate);
 
-// GET /api/certificates - Récupérer tous les certificats (avec filtres)
+// GET /api/certificates - Retrieve all certificates (with filters)
 router.get('/', certificateController.getAll.bind(certificateController));
 
-// GET /api/certificates/:id - Récupérer un certificat par ID
+// GET /api/certificates/:id - Retrieve certificate by ID
 router.get('/:id', certificateController.getById.bind(certificateController));
 
-// POST /api/certificates - Créer un nouveau certificat (UNIVERSITY et ADMIN uniquement)
+// POST /api/certificates - Create new certificate (UNIVERSITY and ADMIN only)
 router.post('/', authorize(Role.UNIVERSITY, Role.ADMIN), certificateController.create.bind(certificateController));
 
-// PUT /api/certificates/:id - Mettre à jour un certificat (UNIVERSITY et ADMIN uniquement)
+// PUT /api/certificates/:id - Update certificate (UNIVERSITY and ADMIN only)
 router.put('/:id', authorize(Role.UNIVERSITY, Role.ADMIN), certificateController.update.bind(certificateController));
 
-// PATCH /api/certificates/:id/revoke - Révoquer un certificat (UNIVERSITY et ADMIN uniquement)
+// PATCH /api/certificates/:id/revoke - Revoke certificate (UNIVERSITY and ADMIN only)
 router.patch('/:id/revoke', authorize(Role.UNIVERSITY, Role.ADMIN), certificateController.revoke.bind(certificateController));
 
-// DELETE /api/certificates/:id - Supprimer un certificat (ADMIN uniquement)
+// DELETE /api/certificates/:id - Delete certificate (ADMIN only)
 router.delete('/:id', authorize(Role.ADMIN), certificateController.delete.bind(certificateController));
 
 export default router;

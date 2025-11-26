@@ -3,62 +3,52 @@ import prisma from '../config/database';
 import emailService from '../services/email.service';
 
 /**
- * Contrôleur pour la gestion des vérifications
- * Gère les opérations CRUD sur les vérifications
+ * Controller for managing verifications
+ * Handles CRUD operations on verifications
  */
 class VerificationController {
   /**
-   * Récupérer toutes les vérifications
+   * Retrieve all verifications
    * GET /api/verifications
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { certificateId, page = 1, limit = 20 } = req.query;
+      const { certificateId } = req.query;
 
       const where: any = {};
       if (certificateId) where.certificateId = certificateId as string;
 
-      const skip = (Number(page) - 1) * Number(limit);
-
-      const [verifications, total] = await Promise.all([
-        prisma.verification.findMany({
-          where,
-          skip,
-          take: Number(limit),
-          orderBy: { verificationDate: 'desc' },
-          include: {
-            certificate: {
-              select: {
-                id: true,
-                degreeTitle: true,
-                specialization: true,
-                status: true,
-              },
+      const verifications = await prisma.verification.findMany({
+        where,
+        orderBy: { verificationDate: 'desc' },
+        include: {
+          certificate: {
+            select: {
+              id: true,
+              degreeTitle: true,
+              specialization: true,
+              status: true,
             },
           },
-        }),
-        prisma.verification.count({ where }),
-      ]);
+        },
+      });
 
       res.status(200).json({
         success: true,
         count: verifications.length,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
         data: verifications,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération des vérifications:', error);
+      console.error('Error retrieving verifications:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération des vérifications',
+        message: 'Server error while retrieving verifications',
       });
     }
   }
 
   /**
-   * Récupérer une vérification par ID
+   * Retrieve a verification by ID
    * GET /api/verifications/:id
    */
   async getById(req: Request, res: Response): Promise<void> {
@@ -91,7 +81,7 @@ class VerificationController {
       if (!verification) {
         res.status(404).json({
           success: false,
-          message: 'Vérification introuvable',
+          message: 'Verification not found',
         });
         return;
       }
@@ -101,32 +91,32 @@ class VerificationController {
         data: verification,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération de la vérification:', error);
+      console.error('Error retrieving verification:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération de la vérification',
+        message: 'Server error while retrieving verification',
       });
     }
   }
 
   /**
-   * Créer une nouvelle vérification
+   * Create a new verification
    * POST /api/verifications
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { certificateId, companyName, email, reason } = req.body;
 
-      // Validation des données
+      // Validate data
       if (!certificateId || !companyName || !email || !reason) {
         res.status(400).json({
           success: false,
-          message: 'Tous les champs sont requis',
+          message: 'All fields are required',
         });
         return;
       }
 
-      // Vérifier que le certificat existe
+      // Verify that certificate exists
       const certificate = await prisma.certificate.findUnique({
         where: { id: certificateId },
         include: {
@@ -141,12 +131,12 @@ class VerificationController {
       if (!certificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable',
+          message: 'Certificate not found',
         });
         return;
       }
 
-      // Créer la vérification
+      // Create verification
       const verification = await prisma.verification.create({
         data: {
           certificateId,
@@ -167,7 +157,7 @@ class VerificationController {
         },
       });
 
-      // Envoyer une notification à l'étudiant
+      // Send notification to student
       if (certificate.student?.email) {
         await emailService.sendVerificationNotification(
           certificate.student.email,
@@ -179,27 +169,27 @@ class VerificationController {
 
       res.status(201).json({
         success: true,
-        message: 'Vérification créée avec succès',
+        message: 'Verification created successfully',
         data: verification,
       });
     } catch (error) {
-      console.error('Erreur lors de la création de la vérification:', error);
+      console.error('Error creating verification:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la création de la vérification',
+        message: 'Server error while creating verification',
       });
     }
   }
 
   /**
-   * Supprimer une vérification
+   * Delete a verification
    * DELETE /api/verifications/:id
    */
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
-      // Vérifier si la vérification existe
+      // Check if verification exists
       const existingVerification = await prisma.verification.findUnique({
         where: { id },
       });
@@ -207,25 +197,25 @@ class VerificationController {
       if (!existingVerification) {
         res.status(404).json({
           success: false,
-          message: 'Vérification introuvable',
+          message: 'Verification not found',
         });
         return;
       }
 
-      // Supprimer la vérification
+      // Delete verification
       await prisma.verification.delete({
         where: { id },
       });
 
       res.status(200).json({
         success: true,
-        message: 'Vérification supprimée avec succès',
+        message: 'Verification deleted successfully',
       });
     } catch (error) {
-      console.error('Erreur lors de la suppression de la vérification:', error);
+      console.error('Error deleting verification:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la suppression de la vérification',
+        message: 'Server error while deleting verification',
       });
     }
   }

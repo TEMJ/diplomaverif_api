@@ -4,12 +4,12 @@ import authService from '../services/auth.service';
 import emailService from '../services/email.service';
 
 /**
- * Contrôleur pour la gestion des universités
- * Gère les opérations CRUD sur les universités
+ * Controller for managing universities
+ * Handles CRUD operations on universities
  */
 class UniversityController {
   /**
-   * Récupérer toutes les universités
+   * Retrieve all universities
    * GET /api/universities
    */
   async getAll(req: Request, res: Response): Promise<void> {
@@ -32,16 +32,16 @@ class UniversityController {
         data: universities,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération des universités:', error);
+      console.error('Error retrieving universities:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération des universités',
+        message: 'Server error while retrieving universities',
       });
     }
   }
 
   /**
-   * Récupérer une université par ID
+   * Retrieve a university by ID
    * GET /api/universities/:id
    */
   async getById(req: Request, res: Response): Promise<void> {
@@ -72,7 +72,7 @@ class UniversityController {
       if (!university) {
         res.status(404).json({
           success: false,
-          message: 'Université introuvable',
+          message: 'University not found',
         });
         return;
       }
@@ -82,32 +82,32 @@ class UniversityController {
         data: university,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'université:', error);
+      console.error('Error retrieving university:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération de l\'université',
+        message: 'Server error while retrieving university',
       });
     }
   }
 
   /**
-   * Créer une nouvelle université
+   * Create a new university
    * POST /api/universities
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { name, address, contactEmail, phone, logoUrl } = req.body;
 
-      // Validation des données
+      // Validate data
       if (!name || !address || !contactEmail || !phone) {
         res.status(400).json({
           success: false,
-          message: 'Nom, adresse, email et téléphone requis',
+          message: 'Name, address, email and phone required',
         });
         return;
       }
 
-      // Vérifier si l'université existe déjà
+      // Check if university already exists
       const existingUniversity = await prisma.university.findFirst({
         where: { contactEmail },
       });
@@ -115,12 +115,12 @@ class UniversityController {
       if (existingUniversity) {
         res.status(409).json({
           success: false,
-          message: 'Une université avec cet email existe déjà',
+          message: 'A university with this email already exists',
         });
         return;
       }
 
-      // Créer l'université
+      // Create university
       const university = await prisma.university.create({
         data: {
           name,
@@ -131,11 +131,11 @@ class UniversityController {
         },
       });
 
-      // Générer un mot de passe temporaire
+      // Generate temporary password
       const temporaryPassword = authService.generateTemporaryPassword();
       const hashedPassword = await authService.hashPassword(temporaryPassword);
 
-      // Créer l'utilisateur université associé
+      // Create associated university user
       await prisma.user.create({
         data: {
           universityId: university.id,
@@ -145,25 +145,25 @@ class UniversityController {
         },
       });
 
-      // Envoyer l'email de bienvenue
+      // Send welcome email
       await emailService.sendWelcomeEmail(university.contactEmail, temporaryPassword, 'UNIVERSITY');
 
       res.status(201).json({
         success: true,
-        message: 'Université créée avec succès',
+        message: 'University created successfully',
         data: university,
       });
     } catch (error) {
-      console.error('Erreur lors de la création de l\'université:', error);
+      console.error('Error creating university:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la création de l\'université',
+        message: 'Server error while creating university',
       });
     }
   }
 
   /**
-   * Mettre à jour une université
+   * Update a university
    * PUT /api/universities/:id
    */
   async update(req: Request, res: Response): Promise<void> {
@@ -171,7 +171,7 @@ class UniversityController {
       const { id } = req.params;
       const { name, address, contactEmail, phone, logoUrl } = req.body;
 
-      // Vérifier si l'université existe
+      // Check if university exists
       const existingUniversity = await prisma.university.findUnique({
         where: { id },
       });
@@ -179,12 +179,12 @@ class UniversityController {
       if (!existingUniversity) {
         res.status(404).json({
           success: false,
-          message: 'Université introuvable',
+          message: 'University not found',
         });
         return;
       }
 
-      // Mettre à jour l'université
+      // Update university
       const university = await prisma.university.update({
         where: { id },
         data: {
@@ -198,27 +198,27 @@ class UniversityController {
 
       res.status(200).json({
         success: true,
-        message: 'Université mise à jour avec succès',
+        message: 'University updated successfully',
         data: university,
       });
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'université:', error);
+      console.error('Error updating university:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la mise à jour de l\'université',
+        message: 'Server error while updating university',
       });
     }
   }
 
   /**
-   * Supprimer une université
+   * Delete a university
    * DELETE /api/universities/:id
    */
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
-      // Vérifier si l'université existe
+      // Check if university exists
       const existingUniversity = await prisma.university.findUnique({
         where: { id },
       });
@@ -226,25 +226,25 @@ class UniversityController {
       if (!existingUniversity) {
         res.status(404).json({
           success: false,
-          message: 'Université introuvable',
+          message: 'University not found',
         });
         return;
       }
 
-      // Supprimer l'université (cascade supprimera les étudiants et certificats associés)
+      // Delete university (cascade will delete associated students and certificates)
       await prisma.university.delete({
         where: { id },
       });
 
       res.status(200).json({
         success: true,
-        message: 'Université supprimée avec succès',
+        message: 'University deleted successfully',
       });
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'université:', error);
+      console.error('Error deleting university:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la suppression de l\'université',
+        message: 'Server error while deleting university',
       });
     }
   }

@@ -3,17 +3,17 @@ import prisma from '../config/database';
 import qrCodeService from '../services/qrcode.service';
 
 /**
- * Contrôleur pour la gestion des certificats/diplômes
- * Gère les opérations CRUD sur les certificats
+ * Controller for managing certificates/diplomas
+ * Handles CRUD operations on certificates
  */
 class CertificateController {
   /**
-   * Récupérer tous les certificats
+   * Retrieve all certificates
    * GET /api/certificates
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { studentId, universityId, status, page = 1, limit = 10 } = req.query;
+      const { studentId, universityId, status } = req.query;
 
       const where: any = {};
       
@@ -21,59 +21,49 @@ class CertificateController {
       if (universityId) where.universityId = universityId as string;
       if (status) where.status = status as string;
 
-      const skip = (Number(page) - 1) * Number(limit);
-
-      const [certificates, total] = await Promise.all([
-        prisma.certificate.findMany({
-          where,
-          skip,
-          take: Number(limit),
-          orderBy: { createdAt: 'desc' },
-          include: {
-            student: {
-              select: {
-                id: true,
-                matricule: true,
-                email: true,
-                major: true,
-              },
-            },
-            university: {
-              select: {
-                id: true,
-                name: true,
-                logoUrl: true,
-              },
-            },
-            _count: {
-              select: {
-                verifications: true,
-              },
+      const certificates = await prisma.certificate.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          student: {
+            select: {
+              id: true,
+              matricule: true,
+              email: true,
+              major: true,
             },
           },
-        }),
-        prisma.certificate.count({ where }),
-      ]);
+          university: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+            },
+          },
+          _count: {
+            select: {
+              verifications: true,
+            },
+          },
+        },
+      });
 
       res.status(200).json({
         success: true,
         count: certificates.length,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
         data: certificates,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération des certificats:', error);
+      console.error('Error retrieving certificates:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération des certificats',
+        message: 'Server error while retrieving certificates',
       });
     }
   }
 
   /**
-   * Récupérer un certificat par ID
+   * Retrieve a certificate by ID
    * GET /api/certificates/:id
    */
   async getById(req: Request, res: Response): Promise<void> {
@@ -104,7 +94,7 @@ class CertificateController {
       if (!certificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable',
+          message: 'Certificate not found',
         });
         return;
       }
@@ -114,35 +104,35 @@ class CertificateController {
         data: certificate,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération du certificat:', error);
+      console.error('Error retrieving certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération du certificat',
+        message: 'Server error while retrieving certificate',
       });
     }
   }
 
   /**
-   * Créer un nouveau certificat
+   * Create a new certificate
    * POST /api/certificates
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { studentId, universityId, degreeTitle, specialization, graduationDate, pdfUrl } = req.body;
 
-      // Validation des données
+      // Validate data
       if (!studentId || !universityId || !degreeTitle || !specialization || !graduationDate || !pdfUrl) {
         res.status(400).json({
           success: false,
-          message: 'Tous les champs sont requis',
+          message: 'All fields are required',
         });
         return;
       }
 
-      // Générer le QR code et le hash
+      // Generate QR code and hash
       const { qrHash, qrCodeUrl } = await qrCodeService.generateQRCodeWithHash();
 
-      // Créer le certificat
+      // Create certificate
       const certificate = await prisma.certificate.create({
         data: {
           studentId,
@@ -163,20 +153,20 @@ class CertificateController {
 
       res.status(201).json({
         success: true,
-        message: 'Certificat créé avec succès',
+        message: 'Certificate created successfully',
         data: certificate,
       });
     } catch (error) {
-      console.error('Erreur lors de la création du certificat:', error);
+      console.error('Error creating certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la création du certificat',
+        message: 'Server error while creating certificate',
       });
     }
   }
 
   /**
-   * Mettre à jour un certificat
+   * Update a certificate
    * PUT /api/certificates/:id
    */
   async update(req: Request, res: Response): Promise<void> {
@@ -184,7 +174,7 @@ class CertificateController {
       const { id } = req.params;
       const { degreeTitle, specialization, graduationDate, pdfUrl, status } = req.body;
 
-      // Vérifier si le certificat existe
+      // Check if certificate exists
       const existingCertificate = await prisma.certificate.findUnique({
         where: { id },
       });
@@ -192,12 +182,12 @@ class CertificateController {
       if (!existingCertificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable',
+          message: 'Certificate not found',
         });
         return;
       }
 
-      // Mettre à jour le certificat
+      // Update certificate
       const certificate = await prisma.certificate.update({
         where: { id },
         data: {
@@ -211,27 +201,27 @@ class CertificateController {
 
       res.status(200).json({
         success: true,
-        message: 'Certificat mis à jour avec succès',
+        message: 'Certificate updated successfully',
         data: certificate,
       });
     } catch (error) {
-      console.error('Erreur lors de la mise à jour du certificat:', error);
+      console.error('Error updating certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la mise à jour du certificat',
+        message: 'Server error while updating certificate',
       });
     }
   }
 
   /**
-   * Supprimer un certificat
+   * Delete a certificate
    * DELETE /api/certificates/:id
    */
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
-      // Vérifier si le certificat existe
+      // Check if certificate exists
       const existingCertificate = await prisma.certificate.findUnique({
         where: { id },
       });
@@ -239,31 +229,31 @@ class CertificateController {
       if (!existingCertificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable',
+          message: 'Certificate not found',
         });
         return;
       }
 
-      // Supprimer le certificat (cascade supprimera les vérifications associées)
+      // Delete certificate (cascade will delete associated verifications)
       await prisma.certificate.delete({
         where: { id },
       });
 
       res.status(200).json({
         success: true,
-        message: 'Certificat supprimé avec succès',
+        message: 'Certificate deleted successfully',
       });
     } catch (error) {
-      console.error('Erreur lors de la suppression du certificat:', error);
+      console.error('Error deleting certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la suppression du certificat',
+        message: 'Server error while deleting certificate',
       });
     }
   }
 
   /**
-   * Vérifier un certificat par hash QR
+   * Verify a certificate by QR hash
    * GET /api/certificates/verify/:qrHash
    */
   async verifyByHash(req: Request, res: Response): Promise<void> {
@@ -290,25 +280,25 @@ class CertificateController {
       if (!certificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable ou hash invalide',
+          message: 'Certificate not found or invalid hash',
         });
         return;
       }
 
-      // Enregistrer la vérification
+      // Record verification
       const verification = await prisma.verification.create({
         data: {
           certificateId: certificate.id,
-          companyName: 'Vérification publique',
+          companyName: 'Public verification',
           email: req.body.email || 'anonymous@example.com',
-          reason: req.body.reason || 'Vérification de diplôme',
+          reason: req.body.reason || 'Diploma verification',
           ipAddress: req.ip || 'unknown',
         },
       });
 
       res.status(200).json({
         success: true,
-        message: certificate.status === 'ACTIVE' ? 'Certificat valide' : 'Certificat révoqué',
+        message: certificate.status === 'ACTIVE' ? 'Certificate valid' : 'Certificate revoked',
         data: {
           certificate: {
             id: certificate.id,
@@ -326,16 +316,16 @@ class CertificateController {
         },
       });
     } catch (error) {
-      console.error('Erreur lors de la vérification du certificat:', error);
+      console.error('Error verifying certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la vérification du certificat',
+        message: 'Server error while verifying certificate',
       });
     }
   }
 
   /**
-   * Révoquer un certificat
+   * Revoke a certificate
    * PATCH /api/certificates/:id/revoke
    */
   async revoke(req: Request, res: Response): Promise<void> {
@@ -349,7 +339,7 @@ class CertificateController {
       if (!certificate) {
         res.status(404).json({
           success: false,
-          message: 'Certificat introuvable',
+          message: 'Certificate not found',
         });
         return;
       }
@@ -361,14 +351,14 @@ class CertificateController {
 
       res.status(200).json({
         success: true,
-        message: 'Certificat révoqué avec succès',
+        message: 'Certificate revoked successfully',
         data: updatedCertificate,
       });
     } catch (error) {
-      console.error('Erreur lors de la révocation du certificat:', error);
+      console.error('Error revoking certificate:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la révocation du certificat',
+        message: 'Server error while revoking certificate',
       });
     }
   }

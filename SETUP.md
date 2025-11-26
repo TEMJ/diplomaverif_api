@@ -1,92 +1,92 @@
-# 🚀 Guide de Démarrage Rapide - DiplomaVerif
+# 🚀 Quick Start Guide - DiplomaVerif
 
-Ce guide vous aidera à démarrer rapidement DiplomaVerif en quelques minutes.
+This guide will help you get started with DiplomaVerif in a few minutes.
 
-## ⚡ Installation Rapide
+## ⚡ Quick Installation
 
-### 1. Installer les Dépendances
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configurer l'Environnement
+### 2. Configure Environment
 
-Copiez le contenu ci-dessous dans un fichier `.env` à la racine du projet:
+Copy the content below to a `.env` file at the project root:
 
 ```env
-# Base de données MySQL
+# MySQL Database
 DATABASE_URL="mysql://root:password@localhost:3306/diplomaverif"
 
 # JWT
-JWT_SECRET="changez_cela_par_une_cle_secrete_forte"
+JWT_SECRET="change_this_with_a_strong_secret_key"
 JWT_EXPIRES_IN="7d"
 
-# Email SMTP (Gmail example)
+# SMTP Email (Gmail example)
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="votre_email@gmail.com"
-SMTP_PASSWORD="votre_mot_de_passe_application"
+SMTP_USER="your_email@gmail.com"
+SMTP_PASSWORD="your_app_password"
 SMTP_FROM="DiplomaVerif <noreply@diplomaverif.com>"
 
-# Serveur
+# Server
 PORT=3000
 NODE_ENV="development"
 BASE_URL="http://localhost:3000"
 
-# Stockage
+# Storage
 UPLOAD_DIR="./uploads"
 ```
 
 **⚠️ Important:** 
-- Remplacez `root:password` par vos identifiants MySQL
-- Créez une base de données MySQL nommée `diplomaverif`
-- Pour Gmail, utilisez un [mot de passe d'application](https://myaccount.google.com/apppasswords)
+- Replace `root:password` with your MySQL credentials
+- Create a MySQL database named `diplomaverif`
+- For Gmail, use an [app password](https://myaccount.google.com/apppasswords)
 
-### 3. Créer la Base de Données
+### 3. Create Database
 
 ```sql
 CREATE DATABASE diplomaverif CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 4. Générer le Client Prisma
+### 4. Generate Prisma Client
 
 ```bash
 npm run prisma:generate
 ```
 
-### 5. Exécuter les Migrations
+### 5. Run Migrations
 
 ```bash
 npm run prisma:migrate
 ```
 
-### 6. Seed les Données de Test
+### 6. Seed Test Data
 
 ```bash
 npm run prisma:seed
 ```
 
-Cette étape crée:
-- 10 universités
+This step creates:
+- 10 universities
 - 1 admin (admin@diplomaverif.com)
-- 100 étudiants
-- 100 certificats avec QR codes
-- 50 vérifications
+- 100 students
+- 100 certificates with QR codes
+- 50 verifications
 
-**Mot de passe par défaut**: `Password123!`
+**Default password**: `Password123!`
 
-### 7. Démarrer le Serveur
+### 7. Start Server
 
 ```bash
 npm run dev
 ```
 
-Le serveur démarre sur `http://localhost:3000`
+Server starts on `http://localhost:3000`
 
-## 🧪 Tester l'API
+## 🧪 Test the API
 
-### 1. Connexion en tant qu'Admin
+### 1. Login as Admin
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
@@ -94,11 +94,11 @@ curl -X POST http://localhost:3000/api/auth/login \
   -d '{"email":"admin@diplomaverif.com","password":"Password123!"}'
 ```
 
-**Réponse attendue:**
+**Expected Response:**
 ```json
 {
   "success": true,
-  "message": "Connexion réussie",
+  "message": "Login successful",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIs...",
     "user": {
@@ -109,73 +109,73 @@ curl -X POST http://localhost:3000/api/auth/login \
 }
 ```
 
-### 2. Récupérer votre Profil
+### 2. Get Your Profile
 
 ```bash
 curl -X GET http://localhost:3000/api/auth/me \
-  -H "Authorization: Bearer VOTRE_TOKEN"
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-### 3. Lister les Universités
+### 3. List Universities
 
 ```bash
 curl -X GET http://localhost:3000/api/universities \
-  -H "Authorization: Bearer VOTRE_TOKEN"
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-### 4. Lister les Étudiants
+### 4. List Students
 
 ```bash
 curl -X GET http://localhost:3000/api/students \
-  -H "Authorization: Bearer VOTRE_TOKEN"
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-### 5. Vérifier un Certificat par QR Code
+### 5. Verify a Certificate by QR Code
 
 ```bash
-curl -X GET http://localhost:3000/api/certificates/verify/QHASH_AQUI
+curl -X GET http://localhost:3000/api/certificates/verify/QHASH_HERE
 ```
 
-## 🎯 Prochaines Étapes
+## 🎯 Next Steps
 
-1. **Explorer avec Prisma Studio:**
+1. **Explore with Prisma Studio:**
    ```bash
    npm run prisma:studio
    ```
-   Interface disponible sur `http://localhost:5555`
+   Interface available at `http://localhost:5555`
 
-2. **Consulter la Documentation Complète:**
-   Lisez le [README.md](README.md) pour tous les détails
+2. **Read Complete Documentation:**
+   See [README.md](README.md) for all details
 
-3. **Créer votre Première Université:**
-   Utilisez les routes API pour créer vos propres données
+3. **Create Your First University:**
+   Use the API routes to create your own data
 
-## ❓ Problèmes Courants
+## ❓ Common Issues
 
 ### "Error: P1001: Can't reach database server"
-- Vérifiez que MySQL est démarré
-- Vérifiez les credentials dans `.env`
+- Verify MySQL is running
+- Check credentials in `.env`
 
 ### "Error: P2002: Unique constraint failed"
-- Les données existent déjà
-- Exécutez `npx prisma migrate reset` pour réinitialiser
+- Data already exists
+- Run `npx prisma migrate reset` to reset
 
 ### "SMTP Error"
-- Vérifiez votre configuration email
-- Pour Gmail, utilisez un mot de passe d'application
+- Check your email configuration
+- For Gmail, use an app password
 
-### Port déjà utilisé
-- Changez le `PORT` dans `.env`
-- Ou arrêtez le processus utilisant le port 3000
+### Port already in use
+- Change `PORT` in `.env`
+- Or stop the process using port 3000
 
-## 📚 Ressources
+## 📚 Resources
 
-- [Documentation Prisma](https://www.prisma.io/docs)
-- [Documentation Express](https://expressjs.com/)
-- [Documentation JWT](https://jwt.io/)
-- [Documentation Nodemailer](https://nodemailer.com/)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Express Documentation](https://expressjs.com/)
+- [JWT Documentation](https://jwt.io/)
+- [Nodemailer Documentation](https://nodemailer.com/)
 
-## 🎉 C'est Prêt!
+## 🎉 Ready!
 
-Votre plateforme DiplomaVerif est maintenant opérationnelle. Bon développement! 🚀
+Your DiplomaVerif platform is now operational. Happy coding! 🚀
 

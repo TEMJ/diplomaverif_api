@@ -1,122 +1,122 @@
 # ⚡ Quick Start - DiplomaVerif
 
-## 🚀 Installation en 5 Minutes
+## 🚀 Installation in 5 Minutes
 
 ```bash
-# 1. Installer les dépendances
+# 1. Install dependencies
 npm install
 
-# 2. Créer un fichier .env avec:
+# 2. Create .env file with:
 DATABASE_URL="mysql://user:password@localhost:3306/diplomaverif"
-JWT_SECRET="votre_cle_secrete"
+JWT_SECRET="your_secret_key"
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="votre_email@gmail.com"
-SMTP_PASSWORD="votre_mot_de_passe_app"
+SMTP_USER="your_email@gmail.com"
+SMTP_PASSWORD="your_app_password"
 SMTP_FROM="DiplomaVerif <noreply@diplomaverif.com>"
 PORT=3000
 BASE_URL="http://localhost:3000"
 UPLOAD_DIR="./uploads"
 
-# 3. Créer la base de données MySQL
+# 3. Create MySQL database
 mysql -u root -p
 CREATE DATABASE diplomaverif CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 
-# 4. Générer Prisma client
+# 4. Generate Prisma client
 npm run prisma:generate
 
-# 5. Appliquer les migrations
+# 5. Apply migrations
 npm run prisma:migrate
 
-# 6. Peupler avec des données de test
+# 6. Populate with test data
 npm run prisma:seed
 
-# 7. Démarrer le serveur
+# 7. Start server
 npm run dev
 ```
 
-Le serveur démarre sur `http://localhost:3000`
+Server starts on `http://localhost:3000`
 
-## 🔑 Credentials de Test
+## 🔑 Test Credentials
 
 **Admin:**
 - Email: `admin@diplomaverif.com`
 - Password: `Password123!`
 
-**Universités:**
-- Voir la console après le seed pour les emails
+**Universities:**
+- Check console after seed for emails
 - Password: `Password123!`
 
-**Étudiants:**
-- Voir la console après le seed pour les emails
+**Students:**
+- Check console after seed for emails
 - Password: `Password123!`
 
-## 🧪 Test Rapide
+## 🧪 Quick Test
 
 ```bash
-# 1. Se connecter
+# 1. Login
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@diplomaverif.com","password":"Password123!"}'
 
-# 2. Copier le token de la réponse
+# 2. Copy token from response
 
-# 3. Tester une route protégée
+# 3. Test protected route
 curl -X GET http://localhost:3000/api/universities \
-  -H "Authorization: Bearer VOTRE_TOKEN"
+  -H "Authorization: Bearer YOUR_TOKEN"
 
-# 4. Vérifier un certificat (public)
-curl -X GET http://localhost:3000/api/certificates/verify/QHASH_D_UN_CERTIFICAT
+# 4. Verify certificate (public)
+curl -X GET http://localhost:3000/api/certificates/verify/QHASH_FROM_CERTIFICATE
 ```
 
 ## 📚 Documentation
 
-- **README.md** - Documentation complète
-- **SETUP.md** - Guide d'installation détaillé
-- **API.md** - Référence API complète
-- **USAGE.md** - Guide d'utilisation
-- **PROJECT_SUMMARY.md** - Vue d'ensemble du projet
+- **README.md** - Complete documentation
+- **SETUP.md** - Detailed installation guide
+- **API.md** - Complete API reference
+- **USAGE.md** - Usage guide
+- **PROJECT_SUMMARY.md** - Project overview
 
-## 🛠 Commandes Utiles
+## 🛠 Useful Commands
 
 ```bash
-npm run dev           # Développement
-npm run build         # Compiler
+npm run dev           # Development
+npm run build         # Compile
 npm start            # Production
-npm run prisma:studio # Interface graphique DB
+npm run prisma:studio # Database GUI
 ```
 
-## ❗ Problèmes Courants
+## ❗ Common Issues
 
 **MySQL connection failed:**
 ```bash
-# Vérifier que MySQL tourne
-# Vérifier DATABASE_URL dans .env
+# Check MySQL is running
+# Check DATABASE_URL in .env
 ```
 
 **Port already in use:**
 ```bash
-# Changer PORT dans .env
+# Change PORT in .env
 ```
 
 **Migration error:**
 ```bash
-# Réinitialiser: npx prisma migrate reset
+# Reset: npx prisma migrate reset
 ```
 
 ## ✅ Checklist
 
-- [ ] MySQL installé et démarré
-- [ ] Base de données créée
-- [ ] .env configuré
-- [ ] Dépendances installées
-- [ ] Migrations appliquées
-- [ ] Données seedées
-- [ ] Serveur démarré
-- [ ] Premier test réussi
+- [ ] MySQL installed and running
+- [ ] Database created
+- [ ] .env configured
+- [ ] Dependencies installed
+- [ ] Migrations applied
+- [ ] Data seeded
+- [ ] Server started
+- [ ] First test successful
 
 ---
 
-**Prêt! 🎉** Consultez les autres documents pour plus de détails.
+**Ready! 🎉** See other documents for more details.
 

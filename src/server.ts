@@ -4,27 +4,27 @@ import { env } from './config/env';
 import emailService from './services/email.service';
 
 /**
- * Point d'entrée principal du serveur
- * Initialise la connexion à la base de données et démarre le serveur Express
+ * Main server entry point
+ * Initializes database connection and starts Express server
  */
 const startServer = async (): Promise<void> => {
   try {
-    // Connexion à la base de données
+    // Connect to database
     await connectDatabase();
 
-    // Vérifier la configuration SMTP (en mode développement)
+    // Verify SMTP configuration (in development mode)
     if (env.nodeEnv === 'development') {
       await emailService.verifyConnection();
     }
 
-    // Démarrer le serveur
+    // Start server
     const server = app.listen(env.port, () => {
-      console.log('\n🚀 Serveur DiplomaVerif démarré avec succès!');
+      console.log('\n🚀 DiplomaVerif server started successfully!');
       console.log(`📡 Port: ${env.port}`);
-      console.log(`🌐 Environnement: ${env.nodeEnv}`);
+      console.log(`🌐 Environment: ${env.nodeEnv}`);
       console.log(`🔗 URL: http://localhost:${env.port}`);
       console.log(`📖 Health check: http://localhost:${env.port}/health\n`);
-      console.log('📊 Endpoints disponibles:');
+      console.log('📊 Available endpoints:');
       console.log('   - POST   /api/auth/login');
       console.log('   - GET    /api/auth/me');
       console.log('   - POST   /api/auth/change-password');
@@ -41,31 +41,31 @@ const startServer = async (): Promise<void> => {
       console.log('   - POST   /api/student-records\n');
     });
 
-    // Gestion de l'arrêt gracieux
+    // Handle graceful shutdown
     const gracefulShutdown = async (): Promise<void> => {
-      console.log('\n⚠️  Signal d\'arrêt reçu, fermeture gracieuse...');
+      console.log('\n⚠️  Shutdown signal received, gracefully closing...');
       
       server.close(async () => {
-        console.log('✅ Serveur HTTP fermé');
+        console.log('✅ HTTP server closed');
         
-        // Fermer la connexion à la base de données
+        // Close database connection
         await disconnectDatabase();
         
-        console.log('✅ Base de données déconnectée');
-        console.log('👋 Au revoir!\n');
+        console.log('✅ Database disconnected');
+        console.log('👋 Goodbye!\n');
         process.exit(0);
       });
     };
 
-    // Écouter les signaux d'arrêt
+    // Listen for shutdown signals
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
   } catch (error) {
-    console.error('❌ Erreur lors du démarrage du serveur:', error);
+    console.error('❌ Error starting server:', error);
     process.exit(1);
   }
 };
 
-// Démarrer le serveur
+// Start server
 startServer();
 

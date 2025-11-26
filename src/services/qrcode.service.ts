@@ -2,52 +2,51 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 
 /**
- * Service de génération de QR codes
- * Génère des codes QR pour les certificats de diplômes
+ * QR Code generation service
+ * Generates QR codes for diploma certificates
  */
 class QRCodeService {
   /**
-   * Génère un hash unique pour un certificat
-   * @returns Un hash hexadécimal de 32 caractères
+   * Generates a unique hash for a certificate
+   * @returns A 32-character hexadecimal hash
    */
   generateHash(): string {
     return crypto.randomBytes(16).toString('hex');
   }
 
   /**
-   * Génère un code QR à partir d'un hash
-   * @param qrHash - Le hash unique du certificat
-   * @returns Une URL de données (data URL) contenant l'image du QR code
+   * Generates a QR code from a hash
+   * @param qrHash - Unique certificate hash
+   * @returns A data URL containing the QR code image
    */
   async generateQRCode(qrHash: string): Promise<string> {
     try {
-      // URL publique où le certificat peut être vérifié
+      // Public URL where the certificate can be verified
       const verificationUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/api/verify/${qrHash}`;
       
-      // Génération du QR code en format PNG
+      // QR code generation in PNG format
       const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
-        errorCorrectionLevel: 'H', // Haute correction d'erreurs
+        errorCorrectionLevel: 'H',
         type: 'image/png',
-        quality: 0.92,
+        width: 300,
         margin: 1,
         color: {
-          dark: '#000000',  // Couleur des carrés
-          light: '#FFFFFF', // Couleur du fond
+          dark: '#000000',
+          light: '#FFFFFF',
         },
-        width: 300, // Largeur en pixels
       });
 
       return qrCodeDataUrl;
     } catch (error) {
-      console.error('❌ Erreur lors de la génération du QR code:', error);
-      throw new Error('Impossible de générer le QR code');
+      console.error('❌ Error generating QR code:', error);
+      throw new Error('Unable to generate QR code');
     }
   }
 
   /**
-   * Génère un QR code et sauvegarde son URL
-   * Cette méthode génère à la fois le hash et le QR code
-   * @returns Un objet contenant le hash et l'URL du QR code
+   * Generates a QR code and saves its URL
+   * This method generates both the hash and QR code
+   * @returns Object containing hash and QR code URL
    */
   async generateQRCodeWithHash(): Promise<{ qrHash: string; qrCodeUrl: string }> {
     const qrHash = this.generateHash();
@@ -60,16 +59,16 @@ class QRCodeService {
   }
 
   /**
-   * Extrait le hash d'une URL de vérification
-   * Utile pour valider les requêtes de vérification
-   * @param url - L'URL de vérification
-   * @returns Le hash extrait ou null
+   * Extracts hash from a verification URL
+   * Useful for validating verification requests
+   * @param url - Verification URL
+   * @returns Extracted hash or null
    */
   extractHashFromUrl(url: string): string | null {
     try {
       const urlParts = url.split('/');
       const hash = urlParts[urlParts.length - 1];
-      // Vérifier que c'est un hash valide (hexadecimal, 32 caractères)
+      // Check if it's a valid hash (hexadecimal, 32 characters)
       if (/^[a-f0-9]{32}$/i.test(hash)) {
         return hash;
       }

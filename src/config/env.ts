@@ -1,14 +1,14 @@
 import dotenv from 'dotenv';
 
-// Chargement des variables d'environnement
+// Load environment variables
 dotenv.config();
 
 /**
- * Configuration centralisée des variables d'environnement
- * Assure la validation et la disponibilité des configurations nécessaires
+ * Centralized environment variables configuration
+ * Ensures validation and availability of necessary configurations
  */
 interface EnvConfig {
-  // Base de données
+  // Database
   databaseUrl: string;
   
   // JWT
@@ -22,17 +22,17 @@ interface EnvConfig {
   smtpPassword: string;
   smtpFrom: string;
   
-  // Serveur
+  // Server
   port: number;
   nodeEnv: string;
   baseUrl: string;
   
-  // Stockage
+  // Storage
   uploadDir: string;
 }
 
 /**
- * Validation des variables d'environnement requises
+ * Validation of required environment variables
  */
 const requiredEnvVars = [
   'DATABASE_URL',
@@ -43,19 +43,19 @@ const requiredEnvVars = [
   'SMTP_PASSWORD',
 ];
 
-// Vérification des variables d'environnement requises
+// Check required environment variables
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-  console.error('❌ Variables d\'environnement manquantes:', missingEnvVars.join(', '));
+  console.error('❌ Missing environment variables:', missingEnvVars.join(', '));
   process.exit(1);
 }
 
 /**
- * Configuration exportée
+ * Exported configuration
  */
 export const env: EnvConfig = {
-  // Base de données
+  // Database
   databaseUrl: process.env.DATABASE_URL || '',
   
   // JWT
@@ -69,12 +69,12 @@ export const env: EnvConfig = {
   smtpPassword: process.env.SMTP_PASSWORD || '',
   smtpFrom: process.env.SMTP_FROM || 'DiplomaVerif <noreply@diplomaverif.com>',
   
-  // Serveur
+  // Server
   port: parseInt(process.env.PORT || '3000'),
   nodeEnv: process.env.NODE_ENV || 'development',
   baseUrl: process.env.BASE_URL || 'http://localhost:3000',
   
-  // Stockage
+  // Storage
   uploadDir: process.env.UPLOAD_DIR || './uploads',
 };
 

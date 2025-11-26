@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 
 /**
- * Middleware de gestion des erreurs
- * Capture et formate toutes les erreurs de l'application
+ * Error handling middleware
+ * Catches and formats all application errors
  */
 export const errorHandler = (
   err: Error,
@@ -11,58 +11,58 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.error('❌ Erreur:', err);
+  console.error('❌ Error:', err);
 
-  // Erreurs Prisma
+  // Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    // Erreur de contrainte unique
+    // Unique constraint error
     if (err.code === 'P2002') {
       const field = err.meta?.target as string[];
       res.status(409).json({
         success: false,
-        message: `Une valeur en double existe déjà pour: ${field?.join(', ')}`,
+        message: `Duplicate value already exists for: ${field?.join(', ')}`,
       });
       return;
     }
 
-    // Enregistrement introuvable
+    // Record not found error
     if (err.code === 'P2025') {
       res.status(404).json({
         success: false,
-        message: 'Ressource introuvable',
+        message: 'Resource not found',
       });
       return;
     }
   }
 
-  // Erreurs Prisma de validation
+  // Prisma validation errors
   if (err instanceof Prisma.PrismaClientValidationError) {
     res.status(400).json({
       success: false,
-      message: 'Données de requête invalides',
+      message: 'Invalid request data',
     });
     return;
   }
 
-  // Erreurs de syntaxe JSON
+  // JSON syntax errors
   if (err instanceof SyntaxError && 'body' in err) {
     res.status(400).json({
       success: false,
-      message: 'Format JSON invalide',
+      message: 'Invalid JSON format',
     });
     return;
   }
 
-  // Erreur générique
+  // Generic error
   res.status(500).json({
     success: false,
-    message: err.message || 'Erreur serveur interne',
+    message: err.message || 'Internal server error',
   });
 };
 
 /**
- * Middleware pour gérer les routes non trouvées
- * Doit être placé après toutes les routes
+ * Middleware to handle not found routes
+ * Should be placed after all routes
  */
 export const notFoundHandler = (
   req: Request,
@@ -71,7 +71,7 @@ export const notFoundHandler = (
 ): void => {
   res.status(404).json({
     success: false,
-    message: `Route non trouvée: ${req.method} ${req.path}`,
+    message: `Route not found: ${req.method} ${req.path}`,
   });
 };
 

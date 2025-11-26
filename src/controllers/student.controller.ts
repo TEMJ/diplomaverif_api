@@ -4,70 +4,60 @@ import authService from '../services/auth.service';
 import emailService from '../services/email.service';
 
 /**
- * Contrôleur pour la gestion des étudiants
- * Gère les opérations CRUD sur les étudiants
+ * Controller for managing students
+ * Handles CRUD operations on students
  */
 class StudentController {
   /**
-   * Récupérer tous les étudiants
+   * Retrieve all students
    * GET /api/students
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, major, page = 1, limit = 10 } = req.query;
+      const { universityId, major } = req.query;
 
       const where: any = {};
       
-      // Filtrer par université si spécifié
+      // Filter by university if specified
       if (universityId) {
         where.universityId = universityId as string;
       }
       
-      // Filtrer par major si spécifié
+      // Filter by major if specified
       if (major) {
         where.major = major as string;
       }
 
-      const skip = (Number(page) - 1) * Number(limit);
-
-      const [students, total] = await Promise.all([
-        prisma.student.findMany({
-          where,
-          skip,
-          take: Number(limit),
-          orderBy: { createdAt: 'desc' },
-          include: {
-            university: {
-              select: {
-                id: true,
-                name: true,
-                logoUrl: true,
-              },
+      const students = await prisma.student.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          university: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
             },
           },
-        }),
-        prisma.student.count({ where }),
-      ]);
+        },
+      });
 
       res.status(200).json({
         success: true,
         count: students.length,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
         data: students,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération des étudiants:', error);
+      console.error('Error retrieving students:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération des étudiants',
+        message: 'Server error while retrieving students',
       });
     }
   }
 
   /**
-   * Récupérer un étudiant par ID
+   * Retrieve a student by ID
    * GET /api/students/:id
    */
   async getById(req: Request, res: Response): Promise<void> {
@@ -95,7 +85,7 @@ class StudentController {
       if (!student) {
         res.status(404).json({
           success: false,
-          message: 'Étudiant introuvable',
+          message: 'Student not found',
         });
         return;
       }
@@ -105,32 +95,32 @@ class StudentController {
         data: student,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'étudiant:', error);
+      console.error('Error retrieving student:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération de l\'étudiant',
+        message: 'Server error while retrieving student',
       });
     }
   }
 
   /**
-   * Créer un nouvel étudiant
+   * Create a new student
    * POST /api/students
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, matricule, email, photoUrl, dateOfBirth, major } = req.body;
+      const { universityId, matricule, firstName, lastName, email, photoUrl, dateOfBirth, major } = req.body;
 
-      // Validation des données
-      if (!universityId || !matricule || !email || !dateOfBirth || !major) {
+      // Validate data
+      if (!universityId || !matricule || !firstName || !lastName || !email || !dateOfBirth || !major) {
         res.status(400).json({
           success: false,
-          message: 'université, matricule, email, date de naissance et major requis',
+          message: 'University, matricule, first name, last name, email, date of birth and major required',
         });
         return;
       }
 
-      // Vérifier si l'étudiant existe déjà
+      // Check if student already exists
       const existingStudent = await prisma.student.findFirst({
         where: {
           OR: [{ matricule }, { email }],
@@ -140,16 +130,18 @@ class StudentController {
       if (existingStudent) {
         res.status(409).json({
           success: false,
-          message: 'Un étudiant avec ce matricule ou cet email existe déjà',
+          message: 'A student with this matricule or email already exists',
         });
         return;
       }
 
-      // Créer l'étudiant
+      // Create student
       const student = await prisma.student.create({
         data: {
           universityId,
           matricule,
+          firstName,
+          lastName,
           email,
           photoUrl,
           dateOfBirth: new Date(dateOfBirth),
@@ -157,11 +149,11 @@ class StudentController {
         },
       });
 
-      // Générer un mot de passe temporaire
+      // Generate temporary password
       const temporaryPassword = authService.generateTemporaryPassword();
       const hashedPassword = await authService.hashPassword(temporaryPassword);
 
-      // Créer l'utilisateur étudiant associé
+      // Create associated student user
       await prisma.user.create({
         data: {
           studentId: student.id,
@@ -171,33 +163,33 @@ class StudentController {
         },
       });
 
-      // Envoyer l'email de bienvenue
+      // Send welcome email
       await emailService.sendWelcomeEmail(student.email, temporaryPassword, 'STUDENT');
 
       res.status(201).json({
         success: true,
-        message: 'Étudiant créé avec succès',
+        message: 'Student created successfully',
         data: student,
       });
     } catch (error) {
-      console.error('Erreur lors de la création de l\'étudiant:', error);
+      console.error('Error creating student:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la création de l\'étudiant',
+        message: 'Server error while creating student',
       });
     }
   }
 
   /**
-   * Mettre à jour un étudiant
+   * Update a student
    * PUT /api/students/:id
    */
   async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { matricule, email, photoUrl, dateOfBirth, major } = req.body;
+      const { matricule, firstName, lastName, email, photoUrl, dateOfBirth, major } = req.body;
 
-      // Vérifier si l'étudiant existe
+      // Check if student exists
       const existingStudent = await prisma.student.findUnique({
         where: { id },
       });
@@ -205,16 +197,18 @@ class StudentController {
       if (!existingStudent) {
         res.status(404).json({
           success: false,
-          message: 'Étudiant introuvable',
+          message: 'Student not found',
         });
         return;
       }
 
-      // Mettre à jour l'étudiant
+      // Update student
       const student = await prisma.student.update({
         where: { id },
         data: {
           matricule,
+          firstName,
+          lastName,
           email,
           photoUrl,
           dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
@@ -224,27 +218,27 @@ class StudentController {
 
       res.status(200).json({
         success: true,
-        message: 'Étudiant mis à jour avec succès',
+        message: 'Student updated successfully',
         data: student,
       });
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'étudiant:', error);
+      console.error('Error updating student:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la mise à jour de l\'étudiant',
+        message: 'Server error while updating student',
       });
     }
   }
 
   /**
-   * Supprimer un étudiant
+   * Delete a student
    * DELETE /api/students/:id
    */
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
-      // Vérifier si l'étudiant existe
+      // Check if student exists
       const existingStudent = await prisma.student.findUnique({
         where: { id },
       });
@@ -252,25 +246,25 @@ class StudentController {
       if (!existingStudent) {
         res.status(404).json({
           success: false,
-          message: 'Étudiant introuvable',
+          message: 'Student not found',
         });
         return;
       }
 
-      // Supprimer l'étudiant (cascade supprimera les certificats et dossiers associés)
+      // Delete student (cascade will delete associated certificates and records)
       await prisma.student.delete({
         where: { id },
       });
 
       res.status(200).json({
         success: true,
-        message: 'Étudiant supprimé avec succès',
+        message: 'Student deleted successfully',
       });
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'étudiant:', error);
+      console.error('Error deleting student:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la suppression de l\'étudiant',
+        message: 'Server error while deleting student',
       });
     }
   }

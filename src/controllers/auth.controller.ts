@@ -4,28 +4,28 @@ import authService from '../services/auth.service';
 import emailService from '../services/email.service';
 
 /**
- * Contrôleur d'authentification
- * Gère la connexion des utilisateurs et la gestion des sessions
+ * Authentication controller
+ * Handles user login and session management
  */
 class AuthController {
   /**
-   * Connexion d'un utilisateur
+   * User login
    * POST /api/auth/login
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
 
-      // Validation des données
+      // Validate data
       if (!email || !password) {
         res.status(400).json({
           success: false,
-          message: 'Email et mot de passe requis',
+          message: 'Email and password required',
         });
         return;
       }
 
-      // Rechercher l'utilisateur par email
+      // Find user by email
       const user = await prisma.user.findUnique({
         where: { email },
         include: {
@@ -43,27 +43,27 @@ class AuthController {
         },
       });
 
-      // Vérifier que l'utilisateur existe
+      // Verify user exists
       if (!user) {
         res.status(401).json({
           success: false,
-          message: 'Email ou mot de passe incorrect',
+          message: 'Invalid email or password',
         });
         return;
       }
 
-      // Vérifier le mot de passe
+      // Verify password
       const isPasswordValid = await authService.comparePassword(password, user.password);
 
       if (!isPasswordValid) {
         res.status(401).json({
           success: false,
-          message: 'Email ou mot de passe incorrect',
+          message: 'Invalid email or password',
         });
         return;
       }
 
-      // Générer le token JWT
+      // Generate JWT token
       const token = authService.generateToken({
         userId: user.id,
         email: user.email,
@@ -72,10 +72,10 @@ class AuthController {
         studentId: user.studentId || undefined,
       });
 
-      // Retourner le token et les informations utilisateur
+      // Return token and user information
       res.status(200).json({
         success: true,
-        message: 'Connexion réussie',
+        message: 'Login successful',
         data: {
           token,
           user: {
@@ -89,16 +89,16 @@ class AuthController {
         },
       });
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
+      console.error('Error during login:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la connexion',
+        message: 'Server error during login',
       });
     }
   }
 
   /**
-   * Récupérer les informations de l'utilisateur connecté
+   * Get logged-in user information
    * GET /api/auth/me
    */
   async getMe(req: Request, res: Response): Promise<void> {
@@ -106,12 +106,12 @@ class AuthController {
       if (!req.user) {
         res.status(401).json({
           success: false,
-          message: 'Utilisateur non authentifié',
+          message: 'User not authenticated',
         });
         return;
       }
 
-      // Récupérer les informations complètes de l'utilisateur
+      // Retrieve complete user information
       const user = await prisma.user.findUnique({
         where: { id: req.user.userId },
         include: {
@@ -132,12 +132,12 @@ class AuthController {
       if (!user) {
         res.status(404).json({
           success: false,
-          message: 'Utilisateur introuvable',
+          message: 'User not found',
         });
         return;
       }
 
-      // Retourner les informations utilisateur (sans le mot de passe)
+      // Return user information (without password)
       const { password, ...userWithoutPassword } = user;
 
       res.status(200).json({
@@ -145,16 +145,16 @@ class AuthController {
         data: userWithoutPassword,
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
+      console.error('Error retrieving profile:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors de la récupération du profil',
+        message: 'Server error while retrieving profile',
       });
     }
   }
 
   /**
-   * Changer le mot de passe
+   * Change password
    * POST /api/auth/change-password
    */
   async changePassword(req: Request, res: Response): Promise<void> {
@@ -162,18 +162,18 @@ class AuthController {
       if (!req.user) {
         res.status(401).json({
           success: false,
-          message: 'Utilisateur non authentifié',
+          message: 'User not authenticated',
         });
         return;
       }
 
       const { currentPassword, newPassword } = req.body;
 
-      // Validation des données
+      // Validate data
       if (!currentPassword || !newPassword) {
         res.status(400).json({
           success: false,
-          message: 'Mot de passe actuel et nouveau mot de passe requis',
+          message: 'Current password and new password required',
         });
         return;
       }
@@ -181,12 +181,12 @@ class AuthController {
       if (newPassword.length < 8) {
         res.status(400).json({
           success: false,
-          message: 'Le nouveau mot de passe doit contenir au moins 8 caractères',
+          message: 'New password must contain at least 8 characters',
         });
         return;
       }
 
-      // Récupérer l'utilisateur
+      // Retrieve user
       const user = await prisma.user.findUnique({
         where: { id: req.user.userId },
       });
@@ -194,12 +194,12 @@ class AuthController {
       if (!user) {
         res.status(404).json({
           success: false,
-          message: 'Utilisateur introuvable',
+          message: 'User not found',
         });
         return;
       }
 
-      // Vérifier le mot de passe actuel
+      // Verify current password
       const isCurrentPasswordValid = await authService.comparePassword(
         currentPassword,
         user.password
@@ -208,15 +208,15 @@ class AuthController {
       if (!isCurrentPasswordValid) {
         res.status(401).json({
           success: false,
-          message: 'Mot de passe actuel incorrect',
+          message: 'Current password is incorrect',
         });
         return;
       }
 
-      // Hasher le nouveau mot de passe
+      // Hash new password
       const hashedNewPassword = await authService.hashPassword(newPassword);
 
-      // Mettre à jour le mot de passe
+      // Update password
       await prisma.user.update({
         where: { id: user.id },
         data: { password: hashedNewPassword },
@@ -224,13 +224,13 @@ class AuthController {
 
       res.status(200).json({
         success: true,
-        message: 'Mot de passe modifié avec succès',
+        message: 'Password changed successfully',
       });
     } catch (error) {
-      console.error('Erreur lors du changement de mot de passe:', error);
+      console.error('Error changing password:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur serveur lors du changement de mot de passe',
+        message: 'Server error while changing password',
       });
     }
   }
