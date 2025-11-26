@@ -11,9 +11,10 @@ class CertificateController {
    * Retrieve all certificates
    * GET /api/certificates
    */
+
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { studentId, universityId, status } = req.query;
+      const { studentId, universityId, status, sortBy, sortOrder } = req.query;
 
       const where: any = {};
       
@@ -21,9 +22,16 @@ class CertificateController {
       if (universityId) where.universityId = universityId as string;
       if (status) where.status = status as string;
 
+      // Validation des paramètres de tri
+      const validSortFields = ['createdAt', 'degreeTitle', 'specialization', 'graduationDate', 'status'];
+      const validSortOrders = ['asc', 'desc'];
+      
+      const sortField = validSortFields.includes(sortBy as string) ? sortBy as string : 'createdAt';
+      const order = validSortOrders.includes(sortOrder as string) ? sortOrder as string : 'desc';
+
       const certificates = await prisma.certificate.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortField]: order },
         include: {
           student: {
             select: {
@@ -61,7 +69,6 @@ class CertificateController {
       });
     }
   }
-
   /**
    * Retrieve a certificate by ID
    * GET /api/certificates/:id
