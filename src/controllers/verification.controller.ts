@@ -25,8 +25,6 @@ class VerificationController {
           certificate: {
             select: {
               id: true,
-              degreeTitle: true,
-              specialization: true,
               status: true,
             },
           },
@@ -63,7 +61,6 @@ class VerificationController {
               student: {
                 select: {
                   id: true,
-                  matricule: true,
                   email: true,
                 },
               },
@@ -149,8 +146,6 @@ class VerificationController {
           certificate: {
             select: {
               id: true,
-              degreeTitle: true,
-              specialization: true,
               status: true,
             },
           },

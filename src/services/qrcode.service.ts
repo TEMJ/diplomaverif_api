@@ -44,6 +44,41 @@ class QRCodeService {
   }
 
   /**
+   * Generates a QR code as a Buffer (PNG binary) for PDF embedding
+   * @param qrHash - Unique certificate hash
+   * @returns A buffer containing the QR code PNG image
+   */
+  async generateQRCodeBuffer(qrHash: string): Promise<Buffer> {
+    try {
+      // Public URL where the certificate can be verified
+      const verificationUrl = `${process.env.BASE_URL || 'http://localhost:5173'}/verify/${qrHash}`;
+      
+      // QR code generation as Buffer (PNG format)
+      // Use toBuffer with options only (no callback for Promise)
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        QRCode.toBuffer(verificationUrl, {
+          errorCorrectionLevel: 'H',
+          type: 'png',
+          width: 300,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        } as any, (err, buf) => {
+          if (err) reject(err);
+          else resolve(buf);
+        });
+      });
+
+      return buffer;
+    } catch (error) {
+      console.error('❌ Error generating QR code buffer:', error);
+      throw new Error('Unable to generate QR code');
+    }
+  }
+
+  /**
    * Generates a QR code and saves its URL
    * This method generates both the hash and QR code
    * @returns Object containing hash and QR code URL

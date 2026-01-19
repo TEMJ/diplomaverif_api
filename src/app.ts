@@ -9,6 +9,9 @@ import studentRoutes from './routes/student.routes';
 import certificateRoutes from './routes/certificate.routes';
 import verificationRoutes from './routes/verification.routes';
 import studentRecordRoutes from './routes/student-record.routes';
+import programRoutes from './routes/program.routes';
+import moduleRoutes from './routes/module.routes';
+import gradeRoutes from './routes/grade.routes';
 
 // Import middlewares
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
@@ -17,8 +20,8 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 dotenv.config();
 
 /**
- * Main Express application
- * Configures middlewares and routes
+ * Main Express application (UK-compliant Academic Certification System)
+ * Configures middlewares and routes for secure certificate generation and verification
  */
 const app = express();
 
@@ -27,11 +30,14 @@ app.use(cors()); // Allow cross-origin requests
 app.use(express.json()); // Parse JSON in requests
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
 
+// Serve static files from public directory
+app.use(express.static('public'));
+
 // Health check route to verify server is running
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'DiplomaVerif server operational',
+    message: 'DiplomaVerif API server operational',
     timestamp: new Date().toISOString(),
   });
 });
@@ -43,14 +49,25 @@ app.use('/api/students', studentRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/verifications', verificationRoutes);
 app.use('/api/student-records', studentRecordRoutes);
+app.use('/api/programs', programRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/grades', gradeRoutes);
 
 // Root route
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Welcome to DiplomaVerif API',
-    version: '1.0.0',
+    message: 'Welcome to DiplomaVerif API - UK Academic Certification & Verification System',
+    version: '2.0.0',
     documentation: 'See README for complete documentation',
+    features: [
+      'Automatic student ID generation',
+      'Weighted grade calculations with CATS credits',
+      'UK degree classification (1st, 2:1, 2:2, 3rd, Fail)',
+      'Secure certificate generation with QR codes',
+      'File uploads for photos, logos, seals, and signatures',
+      'Complete academic record management',
+    ],
   });
 });
 
@@ -61,4 +78,3 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
-

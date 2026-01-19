@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import authService from '../services/auth.service';
 import emailService from '../services/email.service';
+import fileUploadService from '../services/file-upload.service';
+import { StudentIdGenerator } from '../utils/student-id-generator';
 
 /**
- * Controller for managing students
- * Handles CRUD operations on students
+ * Controller for managing students (UK-compliant)
+ * Handles CRUD operations on students with automatic matricule generation
  */
 class StudentController {
   /**
@@ -14,7 +16,7 @@ class StudentController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, major } = req.query;
+      const { universityId, programId } = req.query;
 
       const where: any = {};
       
@@ -23,9 +25,9 @@ class StudentController {
         where.universityId = universityId as string;
       }
       
-      // Filter by major if specified
-      if (major) {
-        where.major = major as string;
+      // Filter by program if specified
+      if (programId) {
+        where.programId = programId as string;
       }
 
       const students = await prisma.student.findMany({
@@ -37,6 +39,13 @@ class StudentController {
               id: true,
               name: true,
               logoUrl: true,
+            },
+          },
+          program: {
+            select: {
+              id: true,
+              title: true,
+              level: true,
             },
           },
         },
@@ -68,6 +77,7 @@ class StudentController {
         where: { id },
         include: {
           university: true,
+          program: true,
           certificates: {
             include: {
               university: {
@@ -79,6 +89,18 @@ class StudentController {
             },
           },
           studentRecord: true,
+          grades: {
+            include: {
+              module: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  credits: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -106,46 +128,83 @@ class StudentController {
   /**
    * Create a new student
    * POST /api/students
+   * Auto-generates student ID (matricule)
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, matricule, firstName, lastName, email, photoUrl, dateOfBirth, major } = req.body;
+      const { universityId, programId, firstName, lastName, email, photoUrl, dateOfBirth, enrollmentDate } = req.body;
 
-      // Validate data
-      if (!universityId || !matricule || !firstName || !lastName || !email || !dateOfBirth || !major) {
+      // Validate required data
+      if (!universityId || !firstName || !lastName || !email) {
         res.status(400).json({
           success: false,
-          message: 'University, matricule, first name, last name, email, date of birth and major required',
+          message: 'University ID, first name, last name, and email are required',
         });
         return;
       }
 
-      // Check if student already exists
+      // Verify university exists
+      const university = await prisma.university.findUnique({
+        where: { id: universityId },
+      });
+
+      if (!university) {
+        res.status(404).json({
+          success: false,
+          message: 'University not found',
+        });
+        return;
+      }
+
+      // Verify program exists (if provided)
+      if (programId) {
+        const program = await prisma.program.findUnique({
+          where: { id: programId },
+        });
+
+        if (!program || program.universityId !== universityId) {
+          res.status(404).json({
+            success: false,
+            message: 'Program not found or does not belong to this university',
+          });
+          return;
+        }
+      }
+
+      // Check if student email already exists
       const existingStudent = await prisma.student.findFirst({
         where: {
-          OR: [{ matricule }, { email }],
+          email,
         },
       });
 
       if (existingStudent) {
         res.status(409).json({
           success: false,
-          message: 'A student with this matricule or email already exists',
+          message: 'A student with this email already exists',
         });
         return;
       }
+
+      // Auto-generate student ID
+      const studentId = await StudentIdGenerator.generateStudentId(universityId);
 
       // Create student
       const student = await prisma.student.create({
         data: {
           universityId,
-          matricule,
+          programId: programId || null,
+          studentId, // Auto-generated matricule
           firstName,
           lastName,
           email,
-          photoUrl,
-          dateOfBirth: new Date(dateOfBirth),
-          major,
+          photoUrl: photoUrl || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : new Date(),
+        },
+        include: {
+          university: true,
+          program: true,
         },
       });
 
@@ -168,8 +227,11 @@ class StudentController {
 
       res.status(201).json({
         success: true,
-        message: 'Student created successfully',
-        data: student,
+        message: 'Student created successfully with auto-generated ID',
+        data: {
+          ...student,
+          studentId: student.studentId, // Highlight the auto-generated ID
+        },
       });
     } catch (error) {
       console.error('Error creating student:', error);
@@ -187,7 +249,7 @@ class StudentController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { matricule, firstName, lastName, email, photoUrl, dateOfBirth, major } = req.body;
+      const { firstName, lastName, email, photoUrl, dateOfBirth, enrollmentDate, programId } = req.body;
 
       // Check if student exists
       const existingStudent = await prisma.student.findUnique({
@@ -202,17 +264,38 @@ class StudentController {
         return;
       }
 
+      // Verify program exists (if provided)
+      if (programId) {
+        const program = await prisma.program.findUnique({
+          where: { id: programId },
+        });
+
+        if (!program || program.universityId !== existingStudent.universityId) {
+          res.status(404).json({
+            success: false,
+            message: 'Program not found or does not belong to this university',
+          });
+          return;
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (email) updateData.email = email;
+      if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+      if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
+      if (enrollmentDate !== undefined) updateData.enrollmentDate = enrollmentDate ? new Date(enrollmentDate) : null;
+      if (programId !== undefined) updateData.programId = programId;
+
       // Update student
       const student = await prisma.student.update({
         where: { id },
-        data: {
-          matricule,
-          firstName,
-          lastName,
-          email,
-          photoUrl,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-          major,
+        data: updateData,
+        include: {
+          university: true,
+          program: true,
         },
       });
 
@@ -251,7 +334,7 @@ class StudentController {
         return;
       }
 
-      // Delete student (cascade will delete associated certificates and records)
+      // Delete student (cascade will delete associated records)
       await prisma.student.delete({
         where: { id },
       });
@@ -265,6 +348,162 @@ class StudentController {
       res.status(500).json({
         success: false,
         message: 'Server error while deleting student',
+      });
+    }
+  }
+
+  /**
+   * Upload or update student photo
+   * PUT /api/students/:id/photo
+   * Only the student themselves or an admin can upload their photo
+   */
+  async uploadPhoto(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const user = (req as any).user;
+
+      // Check authorization
+      if (user.role === 'STUDENT' && user.studentId !== id) {
+        res.status(403).json({
+          success: false,
+          message: 'You can only upload your own photo',
+        });
+        return;
+      }
+
+      // Check if student exists
+      const student = await prisma.student.findUnique({
+        where: { id },
+      });
+
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          message: 'Student not found',
+        });
+        return;
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'No file uploaded',
+        });
+        return;
+      }
+
+      // Get file URL from upload service
+      const photoUrl = fileUploadService.getFileUrl(req.file.filename, 'photos');
+
+      // Update student photo URL
+      const updatedStudent = await prisma.student.update({
+        where: { id },
+        data: {
+          photoUrl,
+        },
+        include: {
+          university: true,
+          program: true,
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Photo uploaded successfully',
+        data: {
+          id: updatedStudent.id,
+          photoUrl: updatedStudent.photoUrl,
+        },
+      });
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while uploading photo',
+      });
+    }
+  }
+
+  /**
+   * Get student with their grades
+   * GET /api/students/:id/with-grades
+   */
+  async getWithGrades(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const student = await prisma.student.findUnique({
+        where: { id },
+        include: {
+          university: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+            },
+          },
+          program: {
+            select: {
+              id: true,
+              title: true,
+              level: true,
+            },
+          },
+          certificates: {
+            include: {
+              university: {
+                select: {
+                  name: true,
+                  logoUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          message: 'Student not found',
+        });
+        return;
+      }
+
+      // Fetch grades with module information
+      const grades = await prisma.grade.findMany({
+        where: { studentId: id },
+        include: {
+          module: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              credits: true,
+            },
+          },
+        },
+        orderBy: {
+          module: {
+            name: 'asc',
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          ...student,
+          grades,
+          gradeCount: grades.length,
+        },
+      });
+    } catch (error) {
+      console.error('Error retrieving student with grades:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while retrieving student',
       });
     }
   }

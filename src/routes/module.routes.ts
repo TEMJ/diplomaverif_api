@@ -1,0 +1,33 @@
+import { Router } from 'express';
+import moduleController from '../controllers/module.controller';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { Role } from '@prisma/client';
+
+/**
+ * Routes for managing Modules (Courses/Units)
+ * Complete CRUD for academic modules
+ */
+const router = Router();
+
+// All routes require authentication
+router.use(authenticate);
+
+// GET /api/modules - Retrieve all modules (with optional filters)
+router.get('/', moduleController.getAll.bind(moduleController));
+
+// GET /api/modules/:id - Retrieve module by ID
+router.get('/:id', moduleController.getById.bind(moduleController));
+
+// GET /api/modules/program/:programId - Retrieve modules by program
+router.get('/program/:programId', moduleController.getByProgram.bind(moduleController));
+
+// POST /api/modules - Create new module (UNIVERSITY and ADMIN only)
+router.post('/', authorize(Role.UNIVERSITY, Role.ADMIN), moduleController.create.bind(moduleController));
+
+// PUT /api/modules/:id - Update module (UNIVERSITY and ADMIN only)
+router.put('/:id', authorize(Role.UNIVERSITY, Role.ADMIN), moduleController.update.bind(moduleController));
+
+// DELETE /api/modules/:id - Delete module (ADMIN only)
+router.delete('/:id', authorize(Role.ADMIN), moduleController.delete.bind(moduleController));
+
+export default router;

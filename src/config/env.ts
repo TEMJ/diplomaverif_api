@@ -72,7 +72,7 @@ export const env: EnvConfig = {
   // Server
   port: parseInt(process.env.PORT || '3000'),
   nodeEnv: process.env.NODE_ENV || 'development',
-  baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+  baseUrl: process.env.BASE_URL || 'http://localhost:5173',
   
   // Storage
   uploadDir: process.env.UPLOAD_DIR || './uploads',

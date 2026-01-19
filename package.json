@@ -13,7 +13,11 @@
     "prisma:studio": "prisma studio",
     "test-email": "ts-node src/test-email.ts"
   },
-  "keywords": ["diploma", "verification", "qr-code"],
+  "keywords": [
+    "diploma",
+    "verification",
+    "qr-code"
+  ],
   "author": "",
   "license": "MIT",
   "prisma": {
@@ -21,6 +25,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
+    "@types/pdfkit": "^0.17.4",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -29,7 +34,9 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.7",
-    "qrcode": "^1.5.3"
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -46,4 +53,3 @@
     "typescript": "^5.3.3"
   }
 }
-

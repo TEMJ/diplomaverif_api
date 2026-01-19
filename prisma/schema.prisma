@@ -23,49 +23,61 @@ enum CertificateStatus {
 }
 
 // University Model
-// Represents a university institution
+// Represents a university institution (UK-compliant)
 model University {
-  id           String   @id @default(uuid())
-  name         String   @db.VarChar(255)
-  address      String   @db.Text
-  contactEmail String   @map("contact_email") @db.VarChar(255)
-  phone        String   @db.VarChar(50)
-  logoUrl      String?  @map("logo_url") @db.VarChar(500)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(uuid())
+  name               String   @db.VarChar(255)
+  address            String   @db.Text
+  contactEmail       String   @map("contact_email") @db.VarChar(255)
+  phone              String   @db.VarChar(50)
+  logoUrl            String?  @map("logo_url") @db.VarChar(500)
+  ukprn              String?  @map("ukprn") @db.VarChar(10)  // UK Provider Reference Number
+  officialSealUrl    String?  @map("official_seal_url") @db.VarChar(500)  // Embossed seal image
+  registrarName      String?  @map("registrar_name") @db.VarChar(255)  // Authorized signatory
+  signatureUrl       String?  @map("signature_url") @db.VarChar(500)  // Digitalized signature
+  createdAt          DateTime @default(now()) @map("created_at")
   
   // Relations
-  students     Student[]
-  certificates Certificate[]
-  users        User[]
+  students           Student[]
+  certificates       Certificate[]
+  users              User[]
+  programs           Program[]
+  modules            Module[]
   
   @@map("universities")
   @@index([contactEmail])
+  @@index([ukprn])
 }
 
 // Student Model
-// Represents a student enrolled in a university
+// Represents a student enrolled in a university (UK-compliant)
 model Student {
-  id            String   @id @default(uuid())
-  universityId  String   @map("university_id")
-  matricule     String   @unique @db.VarChar(50)
-  firstName     String   @map("first_name") @db.VarChar(255)
-  lastName      String   @map("last_name") @db.VarChar(255)
-  email         String   @db.VarChar(255)
-  photoUrl      String?  @map("photo_url") @db.VarChar(500)
-  dateOfBirth   DateTime @map("date_of_birth")
-  createdAt     DateTime @default(now()) @map("created_at")
-  major         String   @db.VarChar(255)
+  id              String   @id @default(uuid())
+  universityId    String   @map("university_id")
+  programId       String?  @map("program_id")  // Optional for backward compatibility
+  studentId       String?  @unique @map("student_id") @db.VarChar(50)  // Auto-generated matricule - optional initially
+  firstName       String   @map("first_name") @db.VarChar(255)
+  lastName        String   @map("last_name") @db.VarChar(255)
+  email           String   @db.VarChar(255)
+  photoUrl        String?  @map("photo_url") @db.VarChar(500)  // Identity photograph
+  dateOfBirth     DateTime? @map("date_of_birth")
+  enrollmentDate  DateTime? @map("enrollment_date")  // Official start date of studies
+  createdAt       DateTime @default(now()) @map("created_at")
   
   // Relations
-  university    University     @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  certificates  Certificate[]
-  user          User?
-  studentRecord StudentRecord?
+  university      University     @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program         Program?       @relation(fields: [programId], references: [id], onDelete: SetNull)
+  certificates    Certificate[]
+  user            User?
+  studentRecord   StudentRecord?
+  grades          Grade[]
   
   @@map("students")
   @@index([universityId])
-  @@index([matricule])
+  @@index([programId])
+  @@index([studentId])
   @@index([email])
+  @@unique([universityId, studentId])
 }
 
 // User Model
@@ -90,25 +102,70 @@ model User {
   @@index([role])
 }
 
+// Program Model
+// Represents a degree structure/program offered by a university
+model Program {
+  id                  String   @id @default(uuid())
+  universityId        String   @map("university_id")
+  title               String   @db.VarChar(255)  // e.g., Bachelor of Science in Computer Science
+  level               String   @db.VarChar(50)   // Undergraduate/Postgraduate
+  totalCreditsRequired Int      @default(360)    // e.g., 360 CATS credits
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  university          University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  students            Student[]
+  modules             Module[]
+  certificates        Certificate[]
+  
+  @@map("programs")
+  @@index([universityId])
+  @@unique([universityId, title])
+}
+
+// Module Model
+// Represents a module/course (replaces Subject)
+model Module {
+  id                 String   @id @default(uuid())
+  universityId       String   @map("university_id")
+  programId          String   @map("program_id")
+  code               String   @db.VarChar(50)    // e.g., CS101
+  name               String   @db.VarChar(255)
+  credits            Int      @default(0)        // CATS value (e.g., 15 or 30)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program            Program    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  grades             Grade[]
+  
+  @@map("modules")
+  @@index([universityId])
+  @@index([programId])
+  @@unique([universityId, code])
+}
+
 // Certificate Model
 // Represents a diploma/attestation issued to a student
 model Certificate {
-  id            String            @id @default(uuid())
-  studentId     String            @map("student_id")
-  universityId  String            @map("university_id")
-  degreeTitle   String            @map("degree_title") @db.VarChar(255)
-  specialization String           @map("specialization") @db.VarChar(255)
-  graduationDate DateTime         @map("graduation_date")
-  pdfUrl        String            @map("pdf_url") @db.VarChar(500)
-  qrCodeUrl     String            @map("qr_code_url") @db.VarChar(500)
-  qrHash        String            @unique @map("qr_hash") @db.VarChar(255)
-  status        CertificateStatus @default(ACTIVE)
-  createdAt     DateTime          @default(now()) @map("created_at")
+  id                   String            @id @default(uuid())
+  studentId            String            @map("student_id")
+  universityId         String            @map("university_id")
+  graduationDate       DateTime          @map("graduation_date")
+  programId            String            @map("program_id")
+  finalMark            Decimal?          @map("final_mark") @db.Decimal(5, 2)  // Weighted average
+  degreeClassification String?           @map("degree_classification") @db.VarChar(50)  // 1st, 2:1, 2:2, 3rd, Fail
+  qrHash               String            @unique @map("qr_hash") @db.VarChar(255)
+  status               CertificateStatus @default(ACTIVE)
+  createdAt            DateTime          @default(now()) @map("created_at")
   
   // Relations
-  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  university    University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  verifications Verification[]
+  student              Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  university           University        @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program              Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  verifications        Verification[]
   
   @@map("certificates")
   @@index([studentId])
@@ -154,4 +211,26 @@ model StudentRecord {
   @@map("student_records")
   @@index([studentId])
 }
+
+// Grade Model
+// Represents a grade/mark obtained by a student in a module
+model Grade {
+  id        String   @id @default(uuid())
+  studentId String   @map("student_id")
+  moduleId  String   @map("module_id")
+  mark      Decimal  @db.Decimal(5, 2)  // Numerical percentage 0-100
+  date      DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  @@map("grades")
+  @@index([studentId])
+  @@index([moduleId])
+  @@unique([studentId, moduleId])
+}
+
 

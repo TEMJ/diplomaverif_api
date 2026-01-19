@@ -18,6 +18,9 @@ router.use(authenticate);
 // GET /api/certificates - Retrieve all certificates (with filters)
 router.get('/', certificateController.getAll.bind(certificateController));
 
+// GET /api/certificates/:id/pdf - Download certificate as PDF
+router.get('/:id/pdf', certificateController.getPdf.bind(certificateController));
+
 // GET /api/certificates/:id - Retrieve certificate by ID
 router.get('/:id', certificateController.getById.bind(certificateController));
 
