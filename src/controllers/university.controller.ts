@@ -15,7 +15,24 @@ class UniversityController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
+      const { search } = req.query;
+
+      const where: any = {};
+
+      // Text search across common university fields
+      if (search && typeof search === 'string' && search.trim() !== '') {
+        const term = search.trim();
+        // Note: we rely on the database collation for case handling
+        where.OR = [
+          { name: { contains: term } },
+          { ukprn: { contains: term } },
+          { address: { contains: term } },
+          { contactEmail: { contains: term } },
+        ];
+      }
+
       const universities = await prisma.university.findMany({
+        where,
         orderBy: { name: 'asc' },
         include: {
           _count: {

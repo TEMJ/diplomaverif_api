@@ -193,13 +193,22 @@ class EmailService {
   /**
    * Sends a certificate issuance notification email to the student
    * @param certificate - Certificate data with all related information
+   * @param options - Optional PDF attachment
    */
-  async sendCertificateIssuanceEmail(certificate: any): Promise<void> {
+  async sendCertificateIssuanceEmail(
+    certificate: any,
+    options?: { pdfBuffer?: Buffer; pdfFilename?: string },
+  ): Promise<void> {
     try {
       const student = certificate.student;
       const university = certificate.university;
       const program = certificate.program;
       const grades = certificate.grades || [];
+
+      if (!student?.email) {
+        console.warn('⚠️ Certificate issuance email skipped: student email missing');
+        return;
+      }
 
       // Format graduation date
       const graduationDate = new Date(certificate.graduationDate).toLocaleDateString('en-GB', {
@@ -259,6 +268,16 @@ class EmailService {
         from: env.smtpFrom,
         to: student.email,
         subject: `🎓 Your Certificate Has Been Issued - ${university.name}`,
+        attachments:
+          options?.pdfBuffer
+            ? [
+                {
+                  filename: options.pdfFilename || 'certificate.pdf',
+                  content: options.pdfBuffer,
+                  contentType: 'application/pdf',
+                },
+              ]
+            : undefined,
         html: `
           <!DOCTYPE html>
           <html>

@@ -312,8 +312,25 @@ class CertificateController {
         grades,
       };
 
-      emailService.sendCertificateIssuanceEmail(certificateWithGrades).catch((err) => {
-        console.error('Erreur lors de l\'envoi de l\'email de certificat:', err);
+      (async () => {
+        try {
+          // Generate PDF and attach it to the issuance email (best-effort)
+          const pdfBuffer = await certificateService.generateCertificatePdf(updatedCertificate.id);
+          const safeFirstName = (updatedCertificate.student?.firstName || 'STUDENT').replace(/\s+/g, '_');
+          const safeLastName = (updatedCertificate.student?.lastName || 'NAME').replace(/\s+/g, '_');
+          const filename = `CERTIFICATE_${safeFirstName}_${safeLastName}.pdf`;
+
+          await emailService.sendCertificateIssuanceEmail(certificateWithGrades, {
+            pdfBuffer,
+            pdfFilename: filename,
+          });
+        } catch (err) {
+          console.error("Erreur lors de l'envoi du PDF par email (fallback sans PDF):", err);
+          // Fallback: send email without PDF attachment
+          await emailService.sendCertificateIssuanceEmail(certificateWithGrades);
+        }
+      })().catch((err) => {
+        console.error("Erreur lors de l'envoi de l'email de certificat:", err);
         // On ne bloque pas la création même si l'email échoue
       });
 

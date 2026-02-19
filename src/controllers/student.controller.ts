@@ -16,7 +16,7 @@ class StudentController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, programId } = req.query;
+      const { universityId, programId, search } = req.query;
 
       const where: any = {};
       
@@ -28,6 +28,18 @@ class StudentController {
       // Filter by program if specified
       if (programId) {
         where.programId = programId as string;
+      }
+
+      // Text search across common student fields
+      if (search && typeof search === 'string' && search.trim() !== '') {
+        const term = search.trim();
+        // Note: we rely on the database collation for case handling
+        where.OR = [
+          { firstName: { contains: term } },
+          { lastName: { contains: term } },
+          { email: { contains: term } },
+          { studentId: { contains: term } },
+        ];
       }
 
       const students = await prisma.student.findMany({

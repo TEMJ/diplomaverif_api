@@ -24,21 +24,7 @@ const startServer = async (): Promise<void> => {
       console.log(`🌐 Environment: ${env.nodeEnv}`);
       console.log(`🔗 URL: http://localhost:${env.port}`);
       console.log(`📖 Health check: http://localhost:${env.port}/health\n`);
-      console.log('📊 Available endpoints:');
-      console.log('   - POST   /api/auth/login');
-      console.log('   - GET    /api/auth/me');
-      console.log('   - POST   /api/auth/change-password');
-      console.log('   - GET    /api/universities');
-      console.log('   - POST   /api/universities');
-      console.log('   - GET    /api/students');
-      console.log('   - POST   /api/students');
-      console.log('   - GET    /api/certificates');
-      console.log('   - POST   /api/certificates');
-      console.log('   - GET    /api/certificates/verify/:qrHash');
-      console.log('   - GET    /api/verifications');
-      console.log('   - POST   /api/verifications');
-      console.log('   - GET    /api/student-records');
-      console.log('   - POST   /api/student-records\n');
+      
     });
 
     // Handle graceful shutdown
