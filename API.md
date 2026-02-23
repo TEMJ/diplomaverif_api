@@ -171,6 +171,45 @@ GET /api/certificates/{id}
 Authorization: Bearer {token}
 ```
 
+### Download Certificate PDF
+```http
+GET /api/certificates/{id}/pdf
+Authorization: Bearer {token}
+```
+Returns the certificate as a PDF file. Students can only download their own certificate.
+
+### Download Transcript PDF (Relevé de notes)
+```http
+GET /api/certificates/{id}/transcript
+Authorization: Bearer {token}
+```
+Returns a PDF transcript with all grades for the certificate's student (module code, name, credits, mark, date; final mark and classification). Students can only download their own transcript.
+
+**Student page – two download buttons:** On the student's certificate detail view, expose two actions:
+- **Certificate** → `GET /api/certificates/{id}/pdf` (diplôme)
+- **Transcript** → `GET /api/certificates/{id}/transcript` (relevé de notes)
+
+Example (trigger download with Bearer token):
+```javascript
+// Certificate button: open or download PDF
+window.open(`${API_BASE}/api/certificates/${certificateId}/pdf?token=${token}`, '_blank');
+// Or use fetch + blob to force download with filename
+const res = await fetch(`${API_BASE}/api/certificates/${certificateId}/pdf`, {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const blob = await res.blob();
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a'); a.href = url; a.download = 'certificate.pdf'; a.click();
+
+// Transcript button: same pattern with /transcript
+const resT = await fetch(`${API_BASE}/api/certificates/${certificateId}/transcript`, {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const blobT = await resT.blob();
+const urlT = URL.createObjectURL(blobT);
+const aT = document.createElement('a'); aT.href = urlT; aT.download = 'transcript.pdf'; aT.click();
+```
+
 ### Create Certificate (UNIVERSITY, ADMIN)
 ```http
 POST /api/certificates

@@ -569,6 +569,15 @@ class CertificateController {
         return;
       }
 
+      // Students can only download their own certificate
+      if (req.user?.role === 'STUDENT' && req.user?.studentId !== certificate.studentId) {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied to this certificate',
+        });
+        return;
+      }
+
       // Set response headers
       const filename = `CERTIFICATE_${certificate.student.firstName}_${certificate.student.lastName}_${Date.now()}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
@@ -582,6 +591,56 @@ class CertificateController {
       res.status(500).json({
         success: false,
         message: 'Server error while generating PDF',
+      });
+    }
+  }
+
+  /**
+   * Download transcript (relevé de notes) as PDF
+   * GET /api/certificates/:id/transcript
+   * Downloads a PDF with all grades for the certificate's student
+   */
+  async getTranscriptPdf(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const certificate = await prisma.certificate.findUnique({
+        where: { id },
+        include: { student: true },
+      });
+
+      if (!certificate) {
+        res.status(404).json({
+          success: false,
+          message: 'Certificate not found',
+        });
+        return;
+      }
+
+      // Students can only download their own transcript
+      if (req.user?.role === 'STUDENT' && req.user?.studentId !== certificate.studentId) {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied to this transcript',
+        });
+        return;
+      }
+
+      const pdfBuffer = await certificateService.generateTranscriptPdf(id);
+
+      const safeFirst = (certificate.student.firstName || 'Student').replace(/\s+/g, '_');
+      const safeLast = (certificate.student.lastName || 'Name').replace(/\s+/g, '_');
+      const filename = `TRANSCRIPT_${safeFirst}_${safeLast}_${Date.now()}.pdf`;
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', String(pdfBuffer.length));
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating transcript PDF:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while generating transcript PDF',
       });
     }
   }

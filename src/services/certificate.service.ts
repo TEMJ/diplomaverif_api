@@ -280,7 +280,7 @@ private buildCertificateContent(
   }
 
   // --- 2. NOM DE L'UNIVERSITÉ ---
-  doc.moveDown(5);
+  doc.moveDown(8);
   doc.fillColor('#1a1a1a')
      .font('Times-Roman') // Police classique Serif
      .fontSize(18)
@@ -363,6 +363,267 @@ private buildCertificateContent(
       // doc.fontSize(7).font('Helvetica').fillColor('#999').text('Verify authenticity', 40, 800);
   }
 }
+
+  /**
+   * Generate a PDF transcript for a certificate's student
+   * @param certificateId - The ID of the certificate
+   * @returns Buffer containing the transcript PDF
+   */
+  async generateTranscriptPdf(certificateId: string): Promise<Buffer> {
+    const certificate = await prisma.certificate.findUnique({
+      where: { id: certificateId },
+      include: {
+        student: true,
+        university: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            address: true,
+            registrarName: true,
+            signatureUrl: true,
+          },
+        },
+        program: { select: { id: true, title: true, level: true, totalCreditsRequired: true } },
+      },
+    });
+
+    if (!certificate) {
+      throw new Error('Certificate not found');
+    }
+
+    const grades = await prisma.grade.findMany({
+      where: {
+        studentId: certificate.studentId,
+        module: { programId: certificate.programId },
+      },
+      include: {
+        module: { select: { code: true, name: true, credits: true } },
+      },
+      orderBy: { module: { code: 'asc' } },
+    });
+
+    let logoBuffer: Buffer | null = null;
+    let signatureBuffer: Buffer | null = null;
+    if (certificate.university?.logoUrl) {
+      logoBuffer = await this.loadImageBuffer(certificate.university.logoUrl);
+    }
+    if (certificate.university?.signatureUrl) {
+      signatureBuffer = await this.loadImageBuffer(certificate.university.signatureUrl);
+    }
+
+    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 40 });
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      this.buildTranscriptContent(doc, certificate, grades, logoBuffer, signatureBuffer);
+      doc.end();
+    });
+  }
+
+  /**
+   * Build transcript PDF content — Cambridge-style layout with official stamp (cachet)
+   */
+  private buildTranscriptContent(
+    doc: PDFKit.PDFDocument,
+    certificate: any,
+    grades: Array<{ mark: any; date: Date; module: { code: string; name: string; credits: number } }>,
+    logoBuffer: Buffer | null,
+    signatureBuffer: Buffer | null,
+  ): void {
+    const { student, university, program, graduationDate, finalMark, degreeClassification } = certificate;
+    const pageWidth = doc.page.width - 80;
+    const marginLeft = 40;
+    const issuedDate = new Date();
+
+    // —— Header: institution name left, logo top right (Cambridge style) ——
+    const logoWidth = 56;
+    const logoX = doc.page.width - marginLeft - logoWidth;
+    if (logoBuffer) {
+      doc.image(logoBuffer, logoX, 36, { width: logoWidth });
+    }
+    doc.font('Times-Roman').fontSize(20).fillColor('#1a1a1a');
+    const uniName = (university?.name || 'UNIVERSITY').toUpperCase();
+    const firstLine = uniName.includes(',') ? uniName.split(',')[0].trim() : uniName;
+    const secondLine = uniName.includes(',') ? uniName.split(',').slice(1).join(',').trim() : '';
+    doc.text(firstLine, marginLeft, 42, { width: logoX - marginLeft - 10 });
+    if (secondLine) {
+      doc.fontSize(11).fillColor('#555').text(secondLine.toUpperCase(), marginLeft, 62, { width: logoX - marginLeft - 10 });
+    }
+    doc.moveDown(secondLine ? 3 : 4);
+
+    // —— Title: Official Student Transcript ——
+    doc.font('Helvetica-Bold').fontSize(16).fillColor('#000')
+      .text('Official Student Transcript', marginLeft, doc.y);
+    doc.moveDown(1);
+    doc.font('Times-Roman').fontSize(10).fillColor('#444')
+      .text(
+        'This document is an official academic transcript. It lists all modules and grades for the above institution.',
+        marginLeft,
+        doc.y,
+        { width: pageWidth, align: 'left' },
+      );
+    doc.moveDown(2);
+
+    // —— Student details block (table-like, Cambridge style) ——
+    const gradDateStr = new Date(graduationDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const issuedStr = issuedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dobStr = student.dateOfBirth
+      ? new Date(student.dateOfBirth).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '—';
+    const studentRows = [
+      { label: 'Surname', value: student.lastName || '—' },
+      { label: 'Given Names', value: student.firstName || '—' },
+      { label: 'Student Number', value: student.studentId || '—' },
+      { label: 'Date of Birth', value: dobStr },
+      { label: 'Programme', value: program?.title || '—' },
+      { label: 'Graduation Date', value: gradDateStr },
+      { label: 'Issued', value: issuedStr },
+      // { label: 'Page', value: '1 of 1' },
+    ];
+    const labelW = 140;
+    const valueX = marginLeft + labelW + 8;
+    let y = doc.y;
+    doc.font('Times-Roman').fontSize(10).fillColor('#333');
+    for (const row of studentRows) {
+      doc.font('Times-Bold').fillColor('#333').text(row.label + ':', marginLeft, y, { width: labelW });
+      doc.font('Times-Roman').text(row.value, valueX, y, { width: pageWidth - labelW - 20 });
+      y += 18;
+    }
+    doc.y = y + 16;
+
+    // —— Section title: Academic Record ——
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#1a1a1a');
+    doc.text('Academic Record', marginLeft, doc.y);
+    doc.moveDown(1);
+
+    // —— Academic record table: with title row and full borders ——
+    const colDate = marginLeft;
+    const colCode = marginLeft + 68;
+    const colSubject = marginLeft + 128;
+    const colCredits = marginLeft + 318;
+    const colMark = marginLeft + 368;
+    const colGrade = marginLeft + 418;
+    const colW = { date: colCode - colDate, code: colSubject - colCode, subject: colCredits - colSubject, credits: colMark - colCredits, mark: colGrade - colMark, grade: marginLeft + pageWidth - colGrade };
+    const rowH = 24;
+    const pad = 6;
+    y = doc.y;
+
+    // Header row: light grey background, dark text (guaranteed visible)
+    doc.rect(marginLeft, y, pageWidth, rowH).fillAndStroke('#cbd5e1', '#475569');
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a');
+    doc.text('Date', colDate + pad, y + pad, { width: colW.date - pad });
+    doc.text('Code', colCode + pad, y + pad, { width: colW.code - pad });
+    doc.text('Subject', colSubject + pad, y + pad, { width: colW.subject - pad });
+    doc.text('Credits', colCredits + pad, y + pad, { width: colW.credits - pad });
+    doc.text('Mark (%)', colMark + pad, y + pad, { width: colW.mark - pad });
+    doc.text('Grade', colGrade + pad, y + pad, { width: colW.grade - pad });
+    y += rowH;
+
+    doc.font('Times-Roman').fontSize(10).fillColor('#1f2937');
+    for (let i = 0; i < grades.length; i++) {
+      if (y > 670) {
+        doc.addPage();
+        y = 40;
+        doc.rect(marginLeft, y, pageWidth, rowH).fillAndStroke('#cbd5e1', '#475569');
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a');
+        doc.text('Date', colDate + pad, y + pad, { width: colW.date - pad });
+        doc.text('Code', colCode + pad, y + pad, { width: colW.code - pad });
+        doc.text('Subject', colSubject + pad, y + pad, { width: colW.subject - pad });
+        doc.text('Credits', colCredits + pad, y + pad, { width: colW.credits - pad });
+        doc.text('Mark (%)', colMark + pad, y + pad, { width: colW.mark - pad });
+        doc.text('Grade', colGrade + pad, y + pad, { width: colW.grade - pad });
+        y += rowH;
+        doc.font('Times-Roman').fontSize(10).fillColor('#1f2937');
+      }
+      const g = grades[i];
+      const markStr = typeof g.mark === 'object' && g.mark !== null ? String((g.mark as any).toString()) : String(g.mark);
+      const dateStr = new Date(g.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const rowBg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+      doc.rect(marginLeft, y, pageWidth, rowH).fillAndStroke(rowBg, '#e2e8f0');
+      doc.rect(colCode, y, 1, rowH).fillAndStroke('#e2e8f0', '#e2e8f0');
+      doc.rect(colSubject, y, 1, rowH).fillAndStroke('#e2e8f0', '#e2e8f0');
+      doc.rect(colCredits, y, 1, rowH).fillAndStroke('#e2e8f0', '#e2e8f0');
+      doc.rect(colMark, y, 1, rowH).fillAndStroke('#e2e8f0', '#e2e8f0');
+      doc.rect(colGrade, y, 1, rowH).fillAndStroke('#e2e8f0', '#e2e8f0');
+      doc.fillColor('#1f2937');
+      doc.text(dateStr, colDate + pad, y + pad, { width: colW.date - pad });
+      doc.text(g.module.code || '—', colCode + pad, y + pad, { width: colW.code - pad });
+      doc.text(g.module.name || '—', colSubject + pad, y + pad, { width: colW.subject - pad * 2 });
+      doc.text(String(g.module.credits ?? '—'), colCredits + pad, y + pad, { width: colW.credits - pad });
+      doc.text(markStr, colMark + pad, y + pad, { width: colW.mark - pad });
+      doc.text(markStr, colGrade + pad, y + pad, { width: colW.grade - pad });
+      y += rowH;
+    }
+    doc.rect(marginLeft, y, pageWidth, 0).stroke('#1f2937');
+
+    doc.y = y + 16;
+
+    // —— Final mark and classification ——
+    if (finalMark != null || degreeClassification) {
+      doc.font('Times-Bold').fontSize(11).fillColor('#1a1a1a');
+      if (finalMark != null) {
+        const fm = typeof finalMark === 'object' && finalMark !== null ? String((finalMark as any).toString()) : String(finalMark);
+        doc.text(`Final mark: ${fm}`, marginLeft, doc.y);
+        doc.moveDown(0.6);
+      }
+      if (degreeClassification) {
+        doc.text(`Classification: ${degreeClassification}`, marginLeft, doc.y);
+        doc.moveDown(1);
+      }
+    }
+
+    doc.moveDown(1.2);
+
+    // —— Certification statement ——
+    doc.font('Times-Roman').fontSize(10).fillColor('#333');
+    doc.text(
+      'I confirm that this is a certified copy of the academic record for the above named student.',
+      marginLeft,
+      doc.y,
+      { width: pageWidth },
+    );
+    doc.moveDown(1.8);
+
+    // —— Signature (left) and Cachet / Stamp (right) ——
+    const sigY = doc.y;
+    const sigLabel = university?.registrarName ? `Signed: ${university.registrarName} (Registrar)` : 'Signed: _________________________ (Registrar)';
+    doc.font('Times-Roman').fontSize(10).fillColor('#333').text(sigLabel, marginLeft, sigY);
+    if (signatureBuffer) {
+      try {
+        doc.image(signatureBuffer, marginLeft, sigY + 14, { width: 80, height: 28 });
+      } catch {
+        doc.text('_________________________', marginLeft, sigY + 16);
+      }
+    } else {
+      doc.text('_________________________', marginLeft, sigY + 16);
+    }
+    doc.font('Times-Roman').fontSize(10).fillColor('#333');
+    doc.text(`Date: ${issuedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`, marginLeft, sigY + 50);
+
+    // —— Cachet (red stamp): institution, location, date, CERTIFIED COPY ——
+    const stampW = 160;
+    const stampH = 72;
+    const stampX = doc.page.width - marginLeft - stampW;
+    const stampY = sigY - 4;
+    doc.rect(stampX, stampY, stampW, stampH).fillAndStroke('#fef2f2', '#b91c1c');
+    doc.fillColor('#b91c1c').font('Helvetica-Bold').fontSize(9);
+    const stampUni = (university?.name || 'Institution').length > 28 ? (university?.name || 'Institution').slice(0, 26) + '…' : (university?.name || 'Institution');
+    doc.text(stampUni.toUpperCase(), stampX + 6, stampY + 8, { width: stampW - 12, align: 'center' });
+    const addressLine = (university?.address || '—').split(/[\n,]/)[0].trim();
+    doc.font('Helvetica').fontSize(8).text(addressLine.slice(0, 40), stampX + 6, stampY + 24, { width: stampW - 12, align: 'center' });
+    doc.font('Helvetica-Bold').fontSize(12).text(
+      issuedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase(),
+      stampX + 6,
+      stampY + 40,
+      { width: stampW - 12, align: 'center' },
+    );
+    doc.fontSize(10).text('CERTIFIED COPY', stampX + 6, stampY + 58, { width: stampW - 12, align: 'center' });
+    doc.fillColor('#000');
+  }
 
   /**
    * Get certificate data with grades for display
