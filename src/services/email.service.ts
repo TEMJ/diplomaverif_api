@@ -422,6 +422,77 @@ class EmailService {
       // Do not fail the operation if email fails
     }
   }
+
+  /**
+   * Sends a password reset OTP email
+   * @param to - Recipient email address
+   * @param otp - One-time password code
+   * @param expiresAt - Expiration date of the OTP
+   */
+  async sendPasswordResetEmail(
+    to: string,
+    otp: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    const expiresStr = expiresAt.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const mailOptions = {
+      from: env.smtpFrom,
+      to,
+      subject: 'DiplomaVerif - Password reset code',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #111827; }
+              .container { max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f9fafb; }
+              .header { text-align: center; padding-bottom: 16px; }
+              .title { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+              .subtitle { font-size: 14px; color: #6b7280; margin: 4px 0 0 0; }
+              .otp-box { background-color: #111827; color: #f9fafb; border-radius: 8px; padding: 18px 24px; margin: 24px 0; text-align: center; }
+              .otp-code { font-size: 28px; letter-spacing: 6px; font-weight: 700; }
+              .info { font-size: 14px; color: #374151; }
+              .warning { margin-top: 16px; font-size: 13px; color: #b91c1c; }
+              .footer { margin-top: 32px; font-size: 12px; color: #9ca3af; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <p class="title">Password reset</p>
+                <p class="subtitle">Use the code below to reset your password on DiplomaVerif.</p>
+              </div>
+
+              <div class="otp-box">
+                <div class="otp-code">${otp}</div>
+              </div>
+
+              <p class="info">
+                This code is valid for <strong>5 minutes</strong>, until approximately <strong>${expiresStr}</strong> (server time).
+                If you did not request this password reset, you can safely ignore this email.
+              </p>
+
+              <p class="warning">
+                For security reasons, do not share this code with anyone. Our team will never ask you for it.
+              </p>
+
+              <div class="footer">
+                <p>DiplomaVerif © ${new Date().getFullYear()}</p>
+                <p>This email was generated automatically. Please do not reply.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    };
+
+    await this.sendEmail(mailOptions);
+  }
 }
 
 export default new EmailService();

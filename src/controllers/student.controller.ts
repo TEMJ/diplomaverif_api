@@ -17,11 +17,22 @@ class StudentController {
   async getAll(req: Request, res: Response): Promise<void> {
     try {
       const { universityId, programId, search } = req.query;
+      const user = req.user!;
 
       const where: any = {};
-      
-      // Filter by university if specified
-      if (universityId) {
+
+      // UNIVERSITY can only see students from their own university
+      if (user.role === 'UNIVERSITY') {
+        if (user.universityId) {
+          where.universityId = user.universityId;
+        } else {
+          res.status(403).json({
+            success: false,
+            message: 'Your account is not linked to a university. Please contact support.',
+          });
+          return;
+        }
+      } else if (universityId) {
         where.universityId = universityId as string;
       }
       
@@ -332,6 +343,7 @@ class StudentController {
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const user = req.user!;
 
       // Check if student exists
       const existingStudent = await prisma.student.findUnique({
@@ -342,6 +354,15 @@ class StudentController {
         res.status(404).json({
           success: false,
           message: 'Student not found',
+        });
+        return;
+      }
+
+      // UNIVERSITY can only delete students from their own university
+      if (user.role === 'UNIVERSITY' && user.universityId !== existingStudent.universityId) {
+        res.status(403).json({
+          success: false,
+          message: 'You can only delete students from your own university',
         });
         return;
       }

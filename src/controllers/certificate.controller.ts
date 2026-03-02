@@ -24,8 +24,12 @@ class CertificateController {
       // If user is a STUDENT, only show their own certificates
       if (req.user?.role === 'STUDENT' && req.user?.studentId) {
         where.studentId = req.user.studentId;
+      } else if (req.user?.role === 'UNIVERSITY' && req.user?.universityId) {
+        // UNIVERSITY can only see certificates from their own university
+        where.universityId = req.user.universityId;
+        if (studentId) where.studentId = studentId as string;
       } else {
-        // For ADMIN and UNIVERSITY roles, apply filters if provided
+        // ADMIN: apply filters if provided
         if (studentId) where.studentId = studentId as string;
         if (universityId) where.universityId = universityId as string;
       }
@@ -159,7 +163,8 @@ class CertificateController {
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const {
+      const user = req.user!;
+      let {
         studentId,
         universityId,
         programId,
@@ -168,6 +173,18 @@ class CertificateController {
         degreeClassification,
         marks,
       } = req.body;
+
+      // UNIVERSITY users must use their own university; ADMIN can use any
+      if (user.role === 'UNIVERSITY') {
+        if (!user.universityId) {
+          res.status(403).json({
+            success: false,
+            message: 'Your account is not linked to a university. Please contact support.',
+          });
+          return;
+        }
+        universityId = user.universityId;
+      }
 
       // Validate data (sans qrCodeUrl)
       if (!studentId || !universityId || !programId || !graduationDate) {

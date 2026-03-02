@@ -35,8 +35,8 @@ router.put('/:id', authorize(Role.UNIVERSITY, Role.ADMIN), studentController.upd
 // PUT /api/students/:id/photo - Upload student identity photograph
 router.put('/:id/photo', photoUpload.single('photo'), studentController.uploadPhoto.bind(studentController));
 
-// DELETE /api/students/:id - Delete student (ADMIN only)
-router.delete('/:id', authorize(Role.ADMIN), studentController.delete.bind(studentController));
+// DELETE /api/students/:id - Delete student (UNIVERSITY for own students, ADMIN for all)
+router.delete('/:id', authorize(Role.UNIVERSITY, Role.ADMIN), studentController.delete.bind(studentController));
 
 export default router;
 
