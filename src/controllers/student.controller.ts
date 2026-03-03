@@ -266,6 +266,199 @@ class StudentController {
   }
 
   /**
+   * Bulk create students from CSV
+   * POST /api/students/bulk-upload
+   * CSV expected columns (no UUID required for UNIVERSITY users):
+   * - firstName (required)
+   * - lastName (required)
+   * - email (required)
+   * - programTitle (optional)
+   * - programLevel (optional)
+   * - dateOfBirth (optional, ISO or yyyy-mm-dd)
+   * - enrollmentDate (optional, ISO or yyyy-mm-dd)
+   * For UNIVERSITY users, universityId is taken from req.user and must not be in CSV.
+   */
+  async bulkUpload(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user!;
+
+      if (!req.file || !req.file.buffer) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file is required (field name \"file\")',
+        });
+        return;
+      }
+
+      if (user.role === 'UNIVERSITY' && !user.universityId) {
+        res.status(403).json({
+          success: false,
+          message: 'Your account is not linked to a university. Please contact support.',
+        });
+        return;
+      }
+
+      const universityId = user.role === 'UNIVERSITY' ? user.universityId : null;
+
+      const csvText = req.file.buffer.toString('utf-8');
+      const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length < 2) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file must contain a header row and at least one data row',
+        });
+        return;
+      }
+
+      const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+      const idxFirstName = header.indexOf('firstname');
+      const idxLastName = header.indexOf('lastname');
+      const idxEmail = header.indexOf('email');
+      const idxProgramTitle = header.indexOf('programtitle');
+      const idxProgramLevel = header.indexOf('programlevel');
+      const idxDob = header.indexOf('dateofbirth');
+      const idxEnroll = header.indexOf('enrollmentdate');
+      const idxUniversityId = header.indexOf('universityid');
+
+      if (idxFirstName === -1 || idxLastName === -1 || idxEmail === -1) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV must contain at least \"firstName\", \"lastName\" and \"email\" columns',
+        });
+        return;
+      }
+
+      // Preload programs for this university (or all, if ADMIN)
+      const programWhere: any = {};
+      if (universityId) {
+        programWhere.universityId = universityId;
+      }
+      const allPrograms = await prisma.program.findMany({
+        where: programWhere,
+      });
+      const programMap = new Map<string, string>();
+      for (const p of allPrograms) {
+        const key = `${p.universityId}|${p.title.toLowerCase()}|${(p.level || '').toLowerCase()}`;
+        programMap.set(key, p.id);
+      }
+
+      const rows = lines.slice(1);
+      let created = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const raw = rows[i];
+        if (!raw.trim()) continue;
+        const cols = raw.split(',').map((c) => c.trim());
+
+        const firstName = cols[idxFirstName] || '';
+        const lastName = cols[idxLastName] || '';
+        const email = cols[idxEmail] || '';
+        const programTitle = idxProgramTitle !== -1 ? cols[idxProgramTitle] || '' : '';
+        const programLevel = idxProgramLevel !== -1 ? cols[idxProgramLevel] || '' : '';
+        const dobRaw = idxDob !== -1 ? cols[idxDob] || '' : '';
+        const enrollRaw = idxEnroll !== -1 ? cols[idxEnroll] || '' : '';
+        const rowUniversityId =
+          universityId ||
+          (idxUniversityId !== -1 ? cols[idxUniversityId] || null : null);
+
+        if (!rowUniversityId) {
+          errors.push({ row: i + 2, error: 'Missing universityId for this row' });
+          continue;
+        }
+        if (!firstName || !lastName || !email) {
+          errors.push({ row: i + 2, error: 'Missing firstName, lastName or email' });
+          continue;
+        }
+
+        let programId: string | null = null;
+        if (programTitle) {
+          const levelKey = (programLevel || '').toLowerCase();
+          const keyWithLevel = `${rowUniversityId}|${programTitle.toLowerCase()}|${levelKey}`;
+          const keyNoLevel = `${rowUniversityId}|${programTitle.toLowerCase()}|`;
+          programId = programMap.get(keyWithLevel) || programMap.get(keyNoLevel) || null;
+          if (!programId) {
+            errors.push({
+              row: i + 2,
+              error: `Program not found for title \"${programTitle}\"`,
+            });
+            continue;
+          }
+        }
+
+        const parseDate = (value: string): Date | null => {
+          if (!value) return null;
+          const d = new Date(value);
+          return Number.isNaN(d.getTime()) ? null : d;
+        };
+
+        const dateOfBirth = parseDate(dobRaw);
+        const enrollmentDate = parseDate(enrollRaw) || new Date();
+
+        try {
+          const existingStudent = await prisma.student.findFirst({
+            where: { email },
+          });
+          if (existingStudent) {
+            continue;
+          }
+
+          const studentId = await StudentIdGenerator.generateStudentId(rowUniversityId);
+
+          const student = await prisma.student.create({
+            data: {
+              universityId: rowUniversityId,
+              programId: programId,
+              studentId,
+              firstName,
+              lastName,
+              email,
+              photoUrl: null,
+              dateOfBirth,
+              enrollmentDate,
+            },
+          });
+
+          const temporaryPassword = authService.generateTemporaryPassword();
+          const hashedPassword = await authService.hashPassword(temporaryPassword);
+
+          await prisma.user.create({
+            data: {
+              studentId: student.id,
+              email: student.email,
+              password: hashedPassword,
+              role: 'STUDENT',
+            },
+          });
+
+          await emailService.sendWelcomeEmail(student.email, temporaryPassword, 'STUDENT');
+
+          created += 1;
+        } catch (err: any) {
+          console.error('Error creating student from CSV row', i + 2, err);
+          errors.push({ row: i + 2, error: 'Database error while creating student' });
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Bulk student import finished: ${created} created, ${errors.length} with errors`,
+        stats: {
+          created,
+          failed: errors.length,
+        },
+        errors,
+      });
+    } catch (error) {
+      console.error('Error in bulk student upload:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while processing bulk student upload',
+      });
+    }
+  }
+
+  /**
    * Update a student
    * PUT /api/students/:id
    */

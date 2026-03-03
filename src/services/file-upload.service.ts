@@ -12,6 +12,7 @@ class FileUploadService {
   private uploadDir: string;
   private maxFileSize: number; // 5MB
   private allowedMimeTypes: Set<string>;
+  private csvMimeTypes: Set<string>;
 
   constructor() {
     this.uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../public/uploads');
@@ -21,6 +22,12 @@ class FileUploadService {
       'image/png',
       'image/webp',
       'image/gif',
+    ]);
+
+    this.csvMimeTypes = new Set([
+      'text/csv',
+      'application/vnd.ms-excel',
+      'text/plain',
     ]);
 
     // Ensure upload directories exist
@@ -205,6 +212,24 @@ class FileUploadService {
           cb(null, true);
         } else {
           cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.'));
+        }
+      },
+    });
+  }
+
+  /**
+   * Create multer upload middleware for CSV files (in-memory)
+   * Used for bulk import of programs, modules, and students
+   */
+  createCsvUpload() {
+    return multer({
+      storage: multer.memoryStorage(),
+      limits: { fileSize: this.maxFileSize },
+      fileFilter: (req, file, cb) => {
+        if (this.csvMimeTypes.has(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new Error('Invalid file type. Only CSV files are allowed.'));
         }
       },
     });

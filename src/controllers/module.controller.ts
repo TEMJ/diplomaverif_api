@@ -225,6 +225,169 @@ class ModuleController {
   }
 
   /**
+   * Bulk create modules from CSV
+   * POST /api/modules/bulk-upload
+   * CSV expected columns:
+   * - code (required)
+   * - name (required)
+   * - credits (optional, default 15)
+   * - programTitle (required)
+   * - programLevel (Undergraduate|Postgraduate, optional but recommended)
+   * For UNIVERSITY users, universityId is taken from req.user and must not be in CSV.
+   */
+  async bulkUpload(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user!;
+
+      if (!req.file || !req.file.buffer) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file is required (field name \"file\")',
+        });
+        return;
+      }
+
+      if (user.role === 'UNIVERSITY' && !user.universityId) {
+        res.status(403).json({
+          success: false,
+          message: 'Your account is not linked to a university. Please contact support.',
+        });
+        return;
+      }
+
+      const universityId = user.role === 'UNIVERSITY' ? user.universityId : null;
+
+      const csvText = req.file.buffer.toString('utf-8');
+      const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length < 2) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file must contain a header row and at least one data row',
+        });
+        return;
+      }
+
+      const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+      const idxCode = header.indexOf('code');
+      const idxName = header.indexOf('name');
+      const idxCredits = header.indexOf('credits');
+      const idxProgramTitle = header.indexOf('programtitle');
+      const idxProgramLevel = header.indexOf('programlevel');
+      const idxUniversityId = header.indexOf('universityid');
+
+      if (idxCode === -1 || idxName === -1 || idxProgramTitle === -1) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV must contain at least "code", "name" and "programTitle" columns',
+        });
+        return;
+      }
+
+      // Preload programs for this university (or all, if ADMIN)
+      const programWhere: any = {};
+      if (universityId) {
+        programWhere.universityId = universityId;
+      }
+      const allPrograms = await prisma.program.findMany({
+        where: programWhere,
+      });
+      const programMap = new Map<string, string>();
+      for (const p of allPrograms) {
+        const key = `${p.universityId}|${p.title.toLowerCase()}|${(p.level || '').toLowerCase()}`;
+        programMap.set(key, p.id);
+      }
+
+      const rows = lines.slice(1);
+      let created = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const raw = rows[i];
+        if (!raw.trim()) continue;
+        const cols = raw.split(',').map((c) => c.trim());
+
+        const code = cols[idxCode] || '';
+        const name = cols[idxName] || '';
+        const creditsRaw = idxCredits !== -1 ? cols[idxCredits] : '';
+        const programTitle = cols[idxProgramTitle] || '';
+        const programLevel = idxProgramLevel !== -1 ? cols[idxProgramLevel] || '' : '';
+        const rowUniversityId =
+          universityId ||
+          (idxUniversityId !== -1 ? cols[idxUniversityId] || null : null);
+
+        if (!rowUniversityId) {
+          errors.push({ row: i + 2, error: 'Missing universityId for this row' });
+          continue;
+        }
+        if (!code || !name || !programTitle) {
+          errors.push({ row: i + 2, error: 'Missing code, name or programTitle' });
+          continue;
+        }
+
+        const levelKey = (programLevel || '').toLowerCase();
+        let programId: string | undefined;
+        if (programMap.size > 0) {
+          const keyWithLevel = `${rowUniversityId}|${programTitle.toLowerCase()}|${levelKey}`;
+          const keyNoLevel = `${rowUniversityId}|${programTitle.toLowerCase()}|`;
+          programId = programMap.get(keyWithLevel) || programMap.get(keyNoLevel);
+        }
+        if (!programId) {
+          errors.push({
+            row: i + 2,
+            error: `Program not found for title "${programTitle}"`,
+          });
+          continue;
+        }
+
+        const credits =
+          creditsRaw && !Number.isNaN(Number(creditsRaw)) ? Number(creditsRaw) : 15;
+
+        try {
+          const existing = await prisma.module.findFirst({
+            where: {
+              universityId: rowUniversityId,
+              code,
+            },
+          });
+          if (existing) {
+            continue;
+          }
+
+          await prisma.module.create({
+            data: {
+              universityId: rowUniversityId,
+              programId,
+              code,
+              name,
+              credits,
+            },
+          });
+          created += 1;
+        } catch (err: any) {
+          console.error('Error creating module from CSV row', i + 2, err);
+          errors.push({ row: i + 2, error: 'Database error while creating module' });
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Bulk module import finished: ${created} created, ${errors.length} with errors`,
+        stats: {
+          created,
+          failed: errors.length,
+        },
+        errors,
+      });
+    } catch (error) {
+      console.error('Error in bulk module upload:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while processing bulk module upload',
+      });
+    }
+  }
+
+  /**
    * Update a module
    * PUT /api/modules/:id
    */

@@ -211,6 +211,148 @@ class ProgramController {
   }
 
   /**
+   * Bulk create programs from CSV
+   * POST /api/programs/bulk-upload
+   * CSV expected columns (no header order required):
+   * - title (required)
+   * - level (Undergraduate|Postgraduate, required)
+   * - totalCreditsRequired (optional, default 360)
+   * For UNIVERSITY users, universityId is taken from req.user and must not be in CSV.
+   */
+  async bulkUpload(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user!;
+
+      if (!req.file || !req.file.buffer) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file is required (field name "file")',
+        });
+        return;
+      }
+
+      const csvText = req.file.buffer.toString('utf-8');
+      const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length < 2) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV file must contain a header row and at least one data row',
+        });
+        return;
+      }
+
+      const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+      const idxTitle = header.indexOf('title');
+      const idxLevel = header.indexOf('level');
+      const idxTotalCredits = header.indexOf('totalcreditsrequired');
+      const idxUniversityId = header.indexOf('universityid');
+
+      if (idxTitle === -1 || idxLevel === -1) {
+        res.status(400).json({
+          success: false,
+          message: 'CSV must contain at least "title" and "level" columns',
+        });
+        return;
+      }
+
+      let universityId: string | null = null;
+      if (user.role === 'UNIVERSITY') {
+        if (!user.universityId) {
+          res.status(403).json({
+            success: false,
+            message: 'Your account is not linked to a university. Please contact support.',
+          });
+          return;
+        }
+        universityId = user.universityId;
+      }
+
+      const rows = lines.slice(1);
+      let created = 0;
+      const errors: Array<{ row: number; error: string }> = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const raw = rows[i];
+        if (!raw.trim()) continue;
+        const cols = raw.split(',').map((c) => c.trim());
+
+        const title = cols[idxTitle] || '';
+        const level = cols[idxLevel] || '';
+        const totalCreditsRaw = idxTotalCredits !== -1 ? cols[idxTotalCredits] : '';
+
+        const rowUniversityId =
+          universityId ||
+          (idxUniversityId !== -1 ? cols[idxUniversityId] || null : null);
+
+        if (!rowUniversityId) {
+          errors.push({ row: i + 2, error: 'Missing universityId for this row' });
+          continue;
+        }
+        if (!title || !level) {
+          errors.push({ row: i + 2, error: 'Missing title or level' });
+          continue;
+        }
+        const validLevels = ['undergraduate', 'postgraduate'];
+        if (!validLevels.includes(level.toLowerCase())) {
+          errors.push({
+            row: i + 2,
+            error: 'Level must be either "Undergraduate" or "Postgraduate"',
+          });
+          continue;
+        }
+
+        const totalCredits =
+          totalCreditsRaw && !Number.isNaN(Number(totalCreditsRaw))
+            ? Number(totalCreditsRaw)
+            : 360;
+
+        try {
+          // Upsert-like behaviour: skip if already exists
+          const existing = await prisma.program.findFirst({
+            where: {
+              universityId: rowUniversityId,
+              title,
+            },
+          });
+          if (existing) {
+            continue;
+          }
+
+          await prisma.program.create({
+            data: {
+              universityId: rowUniversityId,
+              title,
+              level:
+                level.toLowerCase() === 'undergraduate' ? 'Undergraduate' : 'Postgraduate',
+              totalCreditsRequired: totalCredits,
+            },
+          });
+          created += 1;
+        } catch (err: any) {
+          console.error('Error creating program from CSV row', i + 2, err);
+          errors.push({ row: i + 2, error: 'Database error while creating program' });
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Bulk program import finished: ${created} created, ${errors.length} with errors`,
+        stats: {
+          created,
+          failed: errors.length,
+        },
+        errors,
+      });
+    } catch (error) {
+      console.error('Error in bulk program upload:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while processing bulk program upload',
+      });
+    }
+  }
+
+  /**
    * Update a program
    * PUT /api/programs/:id
    */

@@ -12,6 +12,7 @@ const router = Router();
 
 // Create photo upload middleware
 const photoUpload = fileUploadService.createPhotoUpload();
+const csvUpload = fileUploadService.createCsvUpload();
 
 // All routes require authentication
 router.use(authenticate);
@@ -28,6 +29,14 @@ router.get('/:id', studentController.getById.bind(studentController));
 // POST /api/students - Create new student (UNIVERSITY and ADMIN only)
 // Auto-generates student ID (matricule)
 router.post('/', authorize(Role.UNIVERSITY, Role.ADMIN), studentController.create.bind(studentController));
+
+// POST /api/students/bulk-upload - Bulk create students from CSV (UNIVERSITY and ADMIN only)
+router.post(
+  '/bulk-upload',
+  authorize(Role.UNIVERSITY, Role.ADMIN),
+  csvUpload.single('file'),
+  studentController.bulkUpload.bind(studentController),
+);
 
 // PUT /api/students/:id - Update student (UNIVERSITY and ADMIN only)
 router.put('/:id', authorize(Role.UNIVERSITY, Role.ADMIN), studentController.update.bind(studentController));

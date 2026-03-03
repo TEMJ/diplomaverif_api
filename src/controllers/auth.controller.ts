@@ -261,6 +261,7 @@ class AuthController {
         res.status(200).json({
           success: true,
           message: 'If this email exists in our system, an OTP has been sent',
+          expiresInSeconds: 300,
         });
         return;
       }
@@ -292,6 +293,7 @@ class AuthController {
       res.status(200).json({
         success: true,
         message: 'If this email exists in our system, an OTP has been sent',
+        expiresInSeconds: 300,
       });
     } catch (error) {
       console.error('Error requesting password reset:', error);
