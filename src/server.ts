@@ -2,6 +2,7 @@ import app from './app';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { env } from './config/env';
 import emailService from './services/email.service';
+import cors from 'cors'; // Assure-toi que l'import est présent
 
 /**
  * Main server entry point
@@ -11,6 +12,21 @@ const startServer = async (): Promise<void> => {
   try {
     // Connect to database
     await connectDatabase();
+
+    // --- MODIFICATION DES CORS ---
+    // On autorise ton domaine de production et le localhost pour le développement
+    app.use(cors({
+      origin: [
+        'http://ton-domaine.com',      // Remplace par ton vrai domaine
+        'https://ton-domaine.com',     // Version sécurisée
+        'http://www.ton-domaine.com', 
+        'http://localhost:5173'        // Pour tes tests locaux avec Vite
+      ],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }));
+    // ------------------------------
 
     // Verify SMTP configuration (in development mode)
     if (env.nodeEnv === 'development') {
@@ -24,7 +40,6 @@ const startServer = async (): Promise<void> => {
       console.log(`🌐 Environment: ${env.nodeEnv}`);
       console.log(`🔗 URL: http://localhost:${env.port}`);
       console.log(`📖 Health check: http://localhost:${env.port}/health\n`);
-      
     });
 
     // Handle graceful shutdown
@@ -54,4 +69,3 @@ const startServer = async (): Promise<void> => {
 
 // Start server
 startServer();
-
