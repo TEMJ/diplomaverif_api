@@ -1,79 +1,67 @@
-import prisma from '../config/database';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 /**
  * Student ID Generator Utility
- * Generates automatic student matricule numbers based on enrollment year and sequence
- * Format: {YEAR}{UNIVERSITY_CODE}{SEQUENCE}
- * Example: 2024UC0001
+ * Format: {UNIV_PREFIX}{YEAR}{ENCODED_TIME}{SEQUENCE}
+ * Example: HARV24K9Z80001
  */
 export class StudentIdGenerator {
   /**
    * Generate a unique student ID for a university
    * @param universityId - The university's ID
-   * @param enrollmentYear - The enrollment year (defaults to current year)
-   * @returns Generated student ID
+   * @returns Generated unique student ID
    */
-  static async generateStudentId(universityId: string, enrollmentYear?: number): Promise<string> {
-    // Use current year if not provided
-    const year = enrollmentYear || new Date().getFullYear();
+  static async generateStudentId(universityId: string): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear().toString().substring(2); // "2026" -> "26"
 
-    // Get the last student for this university and year
-    const lastStudent = await prisma.student.findMany({
+    // 1. Get University Prefix (First 4 letters, Uppercase)
+    const university = await prisma.university.findUnique({
+      where: { id: universityId },
+      select: { name: true }
+    });
+    
+    const prefix = (university?.name || 'STUD')
+      .substring(0, 4)
+      .toUpperCase()
+      .padEnd(4, 'X');
+
+    // 2. Generate a Time-based Hash (Base36 encoding of current timestamp)
+    // We take the last 4 characters of the timestamp in base36 for "shuffling"
+    const timeHash = now.getTime().toString(36).toUpperCase().slice(-4);
+
+    // 3. Get the sequence for today/this year to avoid collisions
+    const count = await prisma.student.count({
       where: {
         universityId,
-        studentId: {
-          startsWith: year.toString(),
+        createdAt: {
+          gte: new Date(now.getFullYear(), 0, 1), // Since start of year
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 1,
     });
+    
+    const sequence = (count + 1).toString().padStart(4, '0');
 
-    // Parse the last sequence number
-    let sequenceNumber = 1;
-    if (lastStudent.length > 0) {
-      const lastStudentId = lastStudent[0].studentId;
-      // Extract the numeric suffix (format: YEAR###)
-      const match = lastStudentId?.match(/(\d{4})(\d{4})$/);
-      if (match) {
-        sequenceNumber = parseInt(match[2], 10) + 1;
-      }
-    }
-
-    // Format: {YEAR}{SEQUENCE} (e.g., 20240001)
-    const studentId = `${year}${String(sequenceNumber).padStart(4, '0')}`;
-
-    return studentId;
+    // Final Format: UNIV + YEAR + TIME_HASH + SEQUENCE
+    // example: POLY26B7X20001
+    return `${prefix}${year}${timeHash}${sequence}`;
   }
 
   /**
    * Validate a student ID format
-   * @param studentId - The student ID to validate
-   * @returns True if valid format
+   * Checks if it starts with 4 letters and contains the year/sequence logic
    */
   static validateStudentId(studentId: string): boolean {
-    // Must be 8 digits: YYYY + 4-digit sequence
-    const pattern = /^\d{8}$/;
+    // Regex: 4 letters + 2 digits (year) + 4 chars (hash) + 4 digits (seq)
+    const pattern = /^[A-Z]{4}\d{2}[A-Z0-9]{4}\d{4}$/;
     return pattern.test(studentId);
   }
 
   /**
-   * Get year from student ID
-   * @param studentId - The student ID
-   * @returns The enrollment year
+   * Extract the university prefix from ID
    */
-  static getYearFromStudentId(studentId: string): number {
-    return parseInt(studentId.substring(0, 4), 10);
-  }
-
-  /**
-   * Get sequence from student ID
-   * @param studentId - The student ID
-   * @returns The sequence number
-   */
-  static getSequenceFromStudentId(studentId: string): number {
-    return parseInt(studentId.substring(4, 8), 10);
+  static getUniversityPrefix(studentId: string): string {
+    return studentId.substring(0, 4);
   }
 }
