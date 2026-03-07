@@ -155,22 +155,41 @@ class StudentController {
    */
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId, programId, firstName, lastName, email, photoUrl, dateOfBirth, enrollmentDate } = req.body;
-
-      // Validate required data
-      if (!universityId || !firstName || !lastName || !email) {
+      const { 
+        universityId, 
+        programId, 
+        firstName, 
+        lastName, 
+        email, 
+        studentId, // Manual ULN input from frontend
+        photoUrl, 
+        dateOfBirth, 
+        enrollmentDate 
+      } = req.body;
+  
+      // 1. Validate required data
+      if (!universityId || !firstName || !lastName || !email || !studentId) {
         res.status(400).json({
           success: false,
-          message: 'University ID, first name, last name, and email are required',
+          message: 'University ID, first name, last name, email, and Student ULN are required',
         });
         return;
       }
-
-      // Verify university exists
+  
+      // 2. Validate ULN format (UK Standard: exactly 10 digits)
+      if (!/^\d{10}$/.test(studentId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid ULN format. It must be exactly 10 digits.',
+        });
+        return;
+      }
+  
+      // 3. Verify university exists
       const university = await prisma.university.findUnique({
         where: { id: universityId },
       });
-
+  
       if (!university) {
         res.status(404).json({
           success: false,
@@ -178,13 +197,13 @@ class StudentController {
         });
         return;
       }
-
-      // Verify program exists (if provided)
+  
+      // 4. Verify program exists (if provided)
       if (programId) {
         const program = await prisma.program.findUnique({
           where: { id: programId },
         });
-
+  
         if (!program || program.universityId !== universityId) {
           res.status(404).json({
             success: false,
@@ -193,14 +212,25 @@ class StudentController {
           return;
         }
       }
-
-      // Check if student email already exists
-      const existingStudent = await prisma.student.findFirst({
-        where: {
-          email,
-        },
+  
+      // 5. Check if ULN (studentId) already exists to avoid P2002 error
+      const duplicateULN = await prisma.student.findUnique({
+        where: { studentId: studentId },
       });
-
+  
+      if (duplicateULN) {
+        res.status(409).json({
+          success: false,
+          message: 'This ULN is already assigned to another student',
+        });
+        return;
+      }
+  
+      // 6. Check if student email already exists
+      const existingStudent = await prisma.student.findFirst({
+        where: { email },
+      });
+  
       if (existingStudent) {
         res.status(409).json({
           success: false,
@@ -208,16 +238,13 @@ class StudentController {
         });
         return;
       }
-
-      // Auto-generate student ID
-      const studentId = await StudentIdGenerator.generateStudentId(universityId);
-
-      // Create student
+  
+      // 7. Create student with manual ULN
       const student = await prisma.student.create({
         data: {
           universityId,
           programId: programId || null,
-          studentId, // Auto-generated matricule
+          studentId, // Manual ULN insertion
           firstName,
           lastName,
           email,
@@ -230,12 +257,12 @@ class StudentController {
           program: true,
         },
       });
-
-      // Generate temporary password
+  
+      // 8. Generate temporary password and hash it
       const temporaryPassword = authService.generateTemporaryPassword();
       const hashedPassword = await authService.hashPassword(temporaryPassword);
-
-      // Create associated student user
+  
+      // 9. Create associated student user
       await prisma.user.create({
         data: {
           studentId: student.id,
@@ -244,18 +271,21 @@ class StudentController {
           role: 'STUDENT',
         },
       });
-
-      // Send welcome email
-      await emailService.sendWelcomeEmail(student.email, temporaryPassword, 'STUDENT');
-
+  
+      // 10. Send welcome email (Wrapped in try/catch to prevent 500 if SMTP fails)
+      try {
+        await emailService.sendWelcomeEmail(student.email, temporaryPassword, 'STUDENT');
+      } catch (mailError) {
+        console.error('Email service failed, but student was created:', mailError);
+      }
+  
+      // 11. Return success response
       res.status(201).json({
         success: true,
-        message: 'Student created successfully with auto-generated ID',
-        data: {
-          ...student,
-          studentId: student.studentId, // Highlight the auto-generated ID
-        },
+        message: 'Student created successfully with provided ULN',
+        data: student,
       });
+  
     } catch (error) {
       console.error('Error creating student:', error);
       res.status(500).json({
