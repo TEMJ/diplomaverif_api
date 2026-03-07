@@ -45,7 +45,7 @@ class StudentController {
       if (search && typeof search === 'string' && search.trim() !== '') {
         const term = search.trim();
         // Note: we rely on the database collation for case handling
-        where.OR = [
+        where.OR = [      
           { firstName: { contains: term } },
           { lastName: { contains: term } },
           { email: { contains: term } },
@@ -341,6 +341,7 @@ class StudentController {
       }
 
       const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+      const idxStudentId = header.indexOf('studentid');
       const idxFirstName = header.indexOf('firstname');
       const idxLastName = header.indexOf('lastname');
       const idxEmail = header.indexOf('email');
@@ -350,7 +351,7 @@ class StudentController {
       const idxEnroll = header.indexOf('enrollmentdate');
       const idxUniversityId = header.indexOf('universityid');
 
-      if (idxFirstName === -1 || idxLastName === -1 || idxEmail === -1) {
+      if (idxStudentId === -1 || idxFirstName === -1 || idxLastName === -1 || idxEmail === -1) {
         res.status(400).json({
           success: false,
           message: 'CSV must contain at least \"firstName\", \"lastName\" and \"email\" columns',
@@ -381,6 +382,7 @@ class StudentController {
         if (!raw.trim()) continue;
         const cols = raw.split(',').map((c) => c.trim());
 
+        const studentId = cols[idxStudentId] || '';
         const firstName = cols[idxFirstName] || '';
         const lastName = cols[idxLastName] || '';
         const email = cols[idxEmail] || '';
@@ -396,8 +398,8 @@ class StudentController {
           errors.push({ row: i + 2, error: 'Missing universityId for this row' });
           continue;
         }
-        if (!firstName || !lastName || !email) {
-          errors.push({ row: i + 2, error: 'Missing firstName, lastName or email' });
+        if (!studentId || !firstName || !lastName || !email) {
+          errors.push({ row: i + 2, error: 'Missing studentId, firstName, lastName or email' });
           continue;
         }
 
@@ -433,7 +435,7 @@ class StudentController {
             continue;
           }
 
-          const studentId = await StudentIdGenerator.generateStudentId(rowUniversityId);
+          // const studentId = await StudentIdGenerator.generateStudentId(rowUniversityId);
 
           const student = await prisma.student.create({
             data: {
@@ -495,7 +497,7 @@ class StudentController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { firstName, lastName, email, photoUrl, dateOfBirth, enrollmentDate, programId } = req.body;
+      const { studentId, firstName, lastName, email, photoUrl, dateOfBirth, enrollmentDate, programId } = req.body;
 
       // Check if student exists
       const existingStudent = await prisma.student.findUnique({
@@ -527,6 +529,7 @@ class StudentController {
 
       // Prepare update data
       const updateData: any = {};
+      if (studentId) updateData.studentId = studentId;
       if (firstName) updateData.firstName = firstName;
       if (lastName) updateData.lastName = lastName;
       if (email) updateData.email = email;
