@@ -33,7 +33,7 @@ Response:
     "ukprn": "102832",
     ...
   }
-}
+
 ```
 
 ### Upload University Logo
@@ -51,7 +51,7 @@ Response:
   "data": {
     "logoUrl": "http://localhost:3000/uploads/logos/uuid.png"
   }
-}
+
 ```
 
 ### Upload Official Seal
