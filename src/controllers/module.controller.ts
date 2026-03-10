@@ -25,7 +25,7 @@ class ModuleController {
 
       const modules = await prisma.module.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
         include: {
           university: {
             select: {
