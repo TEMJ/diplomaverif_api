@@ -13,10 +13,9 @@ class VerificationController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const { universityId,certificateId } = req.query;
+      const { certificateId } = req.query;
 
       const where: any = {};
-      if (universityId) where.universityId = universityId as string;
       if (certificateId) where.certificateId = certificateId as string;
 
       const verifications = await prisma.verification.findMany({
@@ -29,7 +28,6 @@ class VerificationController {
               status: true,
             },
           },
-          
         },
       });
 
