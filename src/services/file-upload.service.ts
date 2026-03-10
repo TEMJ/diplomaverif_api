@@ -242,8 +242,8 @@ class FileUploadService {
    * @returns URL to access the file
    */
   getFileUrl(fileName: string, fileType: 'photos' | 'logos' | 'seals' | 'signatures'): string {
-    const apiUrl = process.env.API_URL || 'http://localhost:3000';
-    return `${apiUrl}/uploads/${fileType}/${fileName}`;
+    // const apiUrl = process.env.API_URL || 'http://localhost:3000';
+    return `/uploads/${fileType}/${fileName}`;
   }
 
   /**
