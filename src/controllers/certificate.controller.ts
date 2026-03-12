@@ -453,71 +453,69 @@ class CertificateController {
    * Verify a certificate by QR hash
    * GET /api/certificates/verify/:qrHash
    */
-  async verifyByHash(req: Request, res: Response): Promise<void> {
-    try {
-      const { qrHash } = req.params;
+async verifyByHash(req: Request, res: Response): Promise<void> {
+  try {
+    const { qrHash } = req.params;
 
-      const certificate = await prisma.certificate.findUnique({
-        where: { qrHash },
-        include: {
-          student: {
-            include: {
-              university: {
-                select: {
-                  name: true,
-                  logoUrl: true,
-                },
+    const certificate = await prisma.certificate.findUnique({
+      where: { qrHash },
+      include: {
+        university: true,
+        program: true,
+        student: {
+          include: {
+            // C'est ici qu'on récupère les notes, via l'étudiant
+            grades: {
+              include: {
+                module: true
               },
-            },
-          },
-          university: true,
-        },
-      });
+              orderBy: {
+                module: {
+                  code: 'asc'
+                }
+              }
+            }
+          }
+        }
+      },
+    });
 
-      if (!certificate) {
-        res.status(404).json({
-          success: false,
-          message: 'Certificate not found or invalid hash',
-        });
-        return;
-      }
-
-      // Record verification
-      const verification = await prisma.verification.create({
-        data: {
-          certificateId: certificate.id,
-          companyName: 'Public verification',
-          email: req.body.email || 'anonymous@example.com',
-          reason: req.body.reason || 'Diploma verification',
-          ipAddress: req.ip || 'unknown',
-        },
-      });
-
-      res.status(200).json({
-        success: true,
-        message: certificate.status === 'ACTIVE' ? 'Certificate valid' : 'Certificate revoked',
-        data: {
-          certificate: {
-            id: certificate.id,
-            graduationDate: certificate.graduationDate,
-            status: certificate.status,
-            student: certificate.student,
-            university: certificate.university,
-          },
-          verification: {
-            id: verification.id,
-            verificationDate: verification.verificationDate,
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error verifying certificate:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Server error while verifying certificate',
-      });
+    if (!certificate) {
+      res.status(404).json({ success: false, message: 'Certificate not found' });
+      return;
     }
+
+    // Record verification
+    const verification = await prisma.verification.create({
+      data: {
+        certificateId: certificate.id,
+        companyName: 'Public verification',
+        email: req.body.email || 'anonymous@example.com',
+        reason: req.body.reason || 'Diploma verification',
+        ipAddress: req.ip || 'unknown',
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: certificate.status === 'ACTIVE' ? 'Certificate valid' : 'Certificate revoked',
+      data: {
+        certificate: {
+          ...certificate,
+          // On s'assure de renvoyer les grades au premier niveau pour le Front
+          grades: certificate.student?.grades || []
+        },
+        verification: {
+          id: verification.id,
+          verificationDate: verification.verificationDate,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error verifying certificate:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
+}
 
   /**
    * Revoke a certificate
