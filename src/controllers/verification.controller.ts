@@ -14,9 +14,17 @@ class VerificationController {
   async getAll(req: Request, res: Response): Promise<void> {
     try {
       const { certificateId } = req.query;
+      const user = req.user; // Utilisateur connecté
 
       const where: any = {};
       if (certificateId) where.certificateId = certificateId as string;
+
+      // Filtrer par université si l'utilisateur est de rôle UNIVERSITY
+      if (user?.role === 'UNIVERSITY' && user.universityId) {
+        where.certificate = {
+          universityId: user.universityId,
+        };
+      }
 
       const verifications = await prisma.verification.findMany({
         where,
@@ -26,6 +34,31 @@ class VerificationController {
             select: {
               id: true,
               status: true,
+              graduationDate: true,
+              finalMark: true,
+              degreeClassification: true,
+              universityId: true,  // Ajouté pour la vérification d'accès
+              student: {
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              program: {
+                select: {
+                  id: true,
+                  title: true,
+                  level: true,
+                },
+              },
+              university: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -52,22 +85,43 @@ class VerificationController {
   async getById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const user = req.user; // Utilisateur connecté
 
       const verification = await prisma.verification.findUnique({
         where: { id },
         include: {
           certificate: {
-            include: {
+            select: {
+              id: true,
+              status: true,
+              graduationDate: true,
+              finalMark: true,
+              degreeClassification: true,
+              universityId: true,  // Ajouté pour la vérification d'accès
               student: {
                 select: {
                   id: true,
                   email: true,
+                  firstName: true,
+                  lastName: true,
+                  dateOfBirth: true,
+                  enrollmentDate: true,
+                },
+              },
+              program: {
+                select: {
+                  id: true,
+                  title: true,
+                  level: true,
+                  totalCreditsRequired: true,
                 },
               },
               university: {
                 select: {
                   id: true,
                   name: true,
+                  address: true,
+                  contactEmail: true,
                 },
               },
             },
@@ -81,6 +135,17 @@ class VerificationController {
           message: 'Verification not found',
         });
         return;
+      }
+
+      // Vérifier que la vérification appartient à l'université de l'utilisateur si rôle UNIVERSITY
+      if (user?.role === 'UNIVERSITY' && user.universityId) {
+        if (verification.certificate.universityId !== user.universityId) {
+          res.status(403).json({
+            success: false,
+            message: 'Access denied: verification belongs to another university',
+          });
+          return;
+        }
       }
 
       res.status(200).json({
@@ -103,6 +168,7 @@ class VerificationController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { certificateId, companyName, email, reason } = req.body;
+      const user = req.user; // Utilisateur connecté
 
       // Validate data
       if (!certificateId || !companyName || !email || !reason) {
@@ -131,6 +197,17 @@ class VerificationController {
           message: 'Certificate not found',
         });
         return;
+      }
+
+      // Vérifier que le certificat appartient à l'université de l'utilisateur si rôle UNIVERSITY
+      if (user?.role === 'UNIVERSITY' && user.universityId) {
+        if (certificate.universityId !== user.universityId) {
+          res.status(403).json({
+            success: false,
+            message: 'Access denied: certificate belongs to another university',
+          });
+          return;
+        }
       }
 
       // Create verification
@@ -183,10 +260,18 @@ class VerificationController {
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const user = req.user; // Utilisateur connecté
 
       // Check if verification exists
       const existingVerification = await prisma.verification.findUnique({
         where: { id },
+        select: {
+          certificate: {
+            select: {
+              universityId: true,
+            },
+          },
+        },
       });
 
       if (!existingVerification) {
@@ -195,6 +280,17 @@ class VerificationController {
           message: 'Verification not found',
         });
         return;
+      }
+
+      // Vérifier que la vérification appartient à l'université de l'utilisateur si rôle UNIVERSITY
+      if (user?.role === 'UNIVERSITY' && user.universityId) {
+        if (existingVerification.certificate.universityId !== user.universityId) {
+          res.status(403).json({
+            success: false,
+            message: 'Access denied: verification belongs to another university',
+          });
+          return;
+        }
       }
 
       // Delete verification
